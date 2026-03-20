@@ -15,8 +15,7 @@ from pydantic import BaseModel
 import event_log
 from config import (
     get_config, save_config, get_course_config, update_course_config,
-    get_cached_user, save_cached_user, get_cached_courses, save_cached_courses,
-    init_all_course_defaults,
+    DEFAULT_COURSE_CONFIG,
 )
 from monitor import Monitor
 from domains import TSINGHUA_DOMAIN
@@ -51,29 +50,43 @@ def set_monitor(m: Optional[Monitor]) -> None:
 def _refresh_local_cache(sessionid: str) -> None:
     """Fetch user info and course list from Yuketang, cache locally, and
     ensure every course has default settings in config.json."""
+    cfg = get_config()
+
     try:
-        user = get_user_info(sessionid)
-        save_cached_user(user)
-        logger.info("Cached user info for %s", user.get("name", "?"))
+        cfg["user"] = get_user_info(sessionid)
+        logger.info("Cached user info for %s", cfg["user"].get("name", "?"))
     except Exception as e:
         logger.warning("Failed to cache user info: %s", e)
 
     try:
         raw_courses = get_all_courses(sessionid)
-        # Store a compact representation for local reads
-        course_list = []
-        for c in raw_courses:
-            course_list.append({
+        course_list = [
+            {
                 "classroom_id": str(c.get("classroom_id", "")),
                 "name": (c.get("course") or {}).get("name", c.get("name", "")),
                 "classroom_name": c.get("name", ""),
                 "teacher_name": (c.get("teacher") or {}).get("name"),
-            })
-        save_cached_courses(course_list)
-        init_all_course_defaults(course_list)
+            }
+            for c in raw_courses
+        ]
+        cfg["course_list"] = course_list
+
+        # Ensure every course has default settings
+        courses = cfg.setdefault("courses", {})
+        for c in course_list:
+            cid = c["classroom_id"]
+            if not cid:
+                continue
+            if cid not in courses:
+                courses[cid] = {"name": c["name"], **DEFAULT_COURSE_CONFIG}
+            elif courses[cid].get("name") != c["name"]:
+                courses[cid]["name"] = c["name"]
+
         logger.info("Cached %d courses and initialised default settings", len(course_list))
     except Exception as e:
         logger.warning("Failed to cache courses: %s", e)
+
+    save_config(cfg)
 
 
 # ---------------------------------------------------------------------------
@@ -168,11 +181,9 @@ class CourseConfig(BaseModel):
 @app.get("/api/auth/status")
 async def auth_status():
     cfg = get_config()
-    sid = cfg.get("sessionid", "")
-    if not sid:
+    if not cfg.get("sessionid"):
         return {"logged_in": False, "user": None}
-    user = get_cached_user()
-    return {"logged_in": True, "user": user}
+    return {"logged_in": True, "user": cfg.get("user", {})}
 
 
 @app.post("/api/auth/logout")
@@ -260,7 +271,7 @@ async def ws_login(ws: WebSocket):
             save_config(cfg)
 
             _refresh_local_cache(sessionid)
-            user = get_cached_user()
+            user = get_config().get("user", {})
 
             asyncio.run_coroutine_threadsafe(
                 login_queue.put(
@@ -358,7 +369,7 @@ async def get_all_courses_endpoint():
     cfg = get_config()
     if not cfg.get("sessionid"):
         return []
-    cached = get_cached_courses()
+    cached = cfg.get("course_list", [])
     m = get_monitor()
     # classroomid (str) -> lessonid
     active_map: dict = {}

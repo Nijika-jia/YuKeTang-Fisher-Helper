@@ -5,7 +5,7 @@ import time
 from typing import Dict, Optional
 
 import event_log
-from config import get_config, get_course_config, update_course_config
+from config import get_course_config, update_course_config
 from lesson import Lesson
 from utils import get_on_lesson
 
