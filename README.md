@@ -42,6 +42,10 @@ python start.py
 
 Open <http://localhost:5173> in your browser to use the app.
 
+### Get Gemini API Key
+
+To use AI-powered quiz answering, you need a Gemini API key. Visit [Google AI Studio](https://aistudio.google.com/), go to the [Get API Key page](https://aistudio.google.com/api-keys), and click **Create API Key** to generate one.
+
 ### Stop
 
 ```bash
@@ -106,6 +110,10 @@ python start.py
 ```
 
 在浏览器中打开 <http://localhost:5173> 即可使用。
+
+### 获取 Gemini API Key
+
+如需使用 AI 自动答题功能，需要 Gemini API Key。前往 [Google AI Studio](https://aistudio.google.com/)，前往 [Get API Key 页面](https://aistudio.google.com/api-keys)，点击 **Create API Key** 即可生成。
 
 ### 停止
 
