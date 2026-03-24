@@ -86,14 +86,7 @@ function eventBadgeClass(event: ActivityEvent): string {
 export default function Dashboard() {
   const { t, i18n } = useTranslation()
   const [allCourses, setAllCourses] = useState<CourseItem[]>([])
-  const [events, setEvents] = useState<ActivityEvent[]>(() => {
-    try {
-      const cached = localStorage.getItem('yuketang-events')
-      return cached ? (JSON.parse(cached) as ActivityEvent[]) : []
-    } catch {
-      return []
-    }
-  })
+  const [events, setEvents] = useState<ActivityEvent[]>([])
   const logRef = useRef<HTMLDivElement>(null)
 
   // Keep per-course configs in refs so the WS closure always reads current values
@@ -268,13 +261,6 @@ export default function Dashboard() {
       ws?.close()
     }
   }, [fetchAllCourses, fetchLessons, fetchCourseConfigs])
-
-  // Persist events to localStorage so they survive page navigation
-  useEffect(() => {
-    if (events.length > 0) {
-      localStorage.setItem('yuketang-events', JSON.stringify(events))
-    }
-  }, [events])
 
   // Auto-scroll to top of log when new events arrive
   useEffect(() => {

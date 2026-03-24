@@ -10,12 +10,12 @@ import websocket
 
 from ai_provider import AIProvider, create_provider
 from config import get_active_ai_key
-from domains import TSINGHUA_DOMAIN
+from domains import DOMAIN
 from utils import _make_headers, get_user_info
 
 logger = logging.getLogger(__name__)
 
-WSS_URL = "wss://%s/wsapp/" % TSINGHUA_DOMAIN
+WSS_URL = "wss://%s/wsapp/" % DOMAIN
 
 
 class Lesson:
@@ -73,7 +73,7 @@ class Lesson:
         if self.wsapp:
             self.wsapp.close()
 
-    def send_danmu(self, content: str) -> bool:
+    def send_danmu(self, content: str) -> None:
         payload = {
             "extra": "",
             "fromStart": "50",
@@ -86,23 +86,21 @@ class Lesson:
             "wordCloud": True,
         }
         r = requests.post(
-            url="https://%s/api/v3/lesson/danmu/send" % TSINGHUA_DOMAIN,
+            url="https://%s/api/v3/lesson/danmu/send" % DOMAIN,
             headers=self.headers,
             data=json.dumps(payload),
             proxies={"http": None, "https": None},
             timeout=10,
         )
-        success = json.loads(r.text).get("code") == 0
         self.on_event("danmu", {
             "lesson": self.lessonname,
             "lessonid": self.lessonid,
             "content": content,
-            "status": "success" if success else "error",
+            "status": "success" if r.json()["code"] == 0 else "error",
         })
-        return success
 
-    def answer_questions(self, problemid: Any, problemtype: int, answers: list, limit: int) -> None:
-        wait_time = random.uniform(self.course_config.get("answer_delay_min"), self.course_config.get("answer_delay_max"))
+    def answer_questions(self, problemid: Any, problemtype: int, answers: Any, limit: int) -> None:
+        wait_time = random.uniform(self.course_config["answer_delay_min"], self.course_config["answer_delay_max"])
         if limit != -1 and wait_time >= limit:
             wait_time = max(0, limit - 2)
         if wait_time > 0:
@@ -113,28 +111,23 @@ class Lesson:
         payload = {
             "problemId": problemid,
             "problemType": problemtype,
-            "dt": int(time.time()),
+            "dt": int(time.time() * 1000),
             "result": answers,
         }
         r = requests.post(
-            url="https://%s/api/v3/lesson/problem/answer" % TSINGHUA_DOMAIN,
+            url="https://%s/api/v3/lesson/problem/answer" % DOMAIN,
             headers=self.headers,
             data=json.dumps(payload),
             proxies={"http": None, "https": None},
             timeout=10,
         )
-        try:
-            result = json.loads(r.text)
-        except (json.JSONDecodeError, TypeError):
-            result = {}
-        if not isinstance(result, dict):
-            result = {}
+        result = r.json()
         self.on_event("problem", {
             "lesson": self.lessonname,
             "lessonid": self.lessonid,
             "problemid": problemid,
             "answers": answers,
-            "status": "success" if result.get("code") == 0 else "error",
+            "status": "success" if result["code"] == 0 else "error",
             "message": result.get("msg", ""),
         })
 
@@ -144,7 +137,7 @@ class Lesson:
 
     def _checkin(self) -> None:
         r = requests.post(
-            url="https://%s/api/v3/lesson/checkin" % TSINGHUA_DOMAIN,
+            url="https://%s/api/v3/lesson/checkin" % DOMAIN,
             headers=self.headers,
             data=json.dumps({"source": 5, "lessonId": self.lessonid}),
             proxies={"http": None, "https": None},
@@ -154,41 +147,36 @@ class Lesson:
         if set_auth:
             self.headers["Authorization"] = "Bearer %s" % set_auth
 
-        result = json.loads(r.text)
-        self.auth = result.get("data", {}).get("lessonToken")
+        result = r.json()
+        self.auth = result["data"]["lessonToken"]
 
         user_data = get_user_info(self.sessionid)
-        self.user_uid = user_data.get("id")
-        self.user_uname = user_data.get("name")
+        self.user_uid = user_data["id"]
+        self.user_uname = user_data["name"]
 
-        info = json.loads(
-            requests.get(
-                url="https://%s/api/v3/lesson/basic-info" % TSINGHUA_DOMAIN,
-                headers=self.headers,
-                proxies={"http": None, "https": None},
-                timeout=10,
-            ).text
-        ).get("data", {})
+        info = requests.get(
+            url="https://%s/api/v3/lesson/basic-info" % DOMAIN,
+            headers=self.headers,
+            proxies={"http": None, "https": None},
+            timeout=10,
+        ).json()["data"]
         self.teacher_name = (info.get("teacher") or {}).get("name")
 
         self.on_event("signin", {
             "lesson": self.lessonname,
             "lessonid": self.lessonid,
-            "status": "success" if result.get("code") == 0 else "error",
+            "status": "success" if result["code"] == 0 else "error",
             "message": result.get("msg", ""),
         })
 
-    def _get_ppt(self, presentation_id: Any) -> dict:
+    def _get_problems_from_presentation(self, presentation_id: Any) -> List[dict]:
         r = requests.get(
-            url="https://%s/api/v3/lesson/presentation/fetch?presentation_id=%s" % (TSINGHUA_DOMAIN, presentation_id),
+            url="https://%s/api/v3/lesson/presentation/fetch?presentation_id=%s" % (DOMAIN, presentation_id),
             headers=self.headers,
             proxies={"http": None, "https": None},
             timeout=10,
         )
-        return json.loads(r.text).get("data", {})
-
-    def _get_problems_from_presentation(self, presentation_id: Any) -> List[dict]:
-        data = self._get_ppt(presentation_id)
+        data = r.json()["data"]
         problems = []
         for slide in data.get("slides", []):
             if "problem" in slide:
@@ -198,10 +186,8 @@ class Lesson:
         return problems
 
     def _build_random_answers(self, problem: dict) -> list:
-        problemtype = problem.get("problemType")
+        problemtype = problem["problemType"]
         options = [opt["key"] for opt in problem.get("options", [])]
-        if not options:
-            return []
         if problemtype == 1:
             return [random.choice(options)]
         elif problemtype == 2:
@@ -210,72 +196,45 @@ class Lesson:
         elif problemtype == 3:
             count = int(problem.get("pollingCount", 1))
             return random.sample(options, min(count, len(options)))
-        return []
 
     def _get_ai_provider(self) -> Optional[AIProvider]:
         provider_name, api_key = get_active_ai_key()
         return create_provider(provider_name, api_key)
 
-    def _build_ai_answers(self, problem: dict) -> list:
+    def _build_ai_answers(self, problem: dict) -> list | dict:
         provider = self._get_ai_provider()
-        if provider is None:
-            logger.warning("AI provider not configured, falling back to random")
+        if not provider:
             return self._build_random_answers(problem)
 
         cover_url = problem.get("_cover", "")
-        if not cover_url:
-            logger.warning("No cover URL for problem %s, falling back to random", problem.get("problemId"))
-            return self._build_random_answers(problem)
 
-        problemtype = problem.get("problemType")
-        try:
-            if problemtype == 5:
-                text = provider.answer_short(cover_url)
-                return [text] if text else []
-            else:
-                options = [opt["key"] for opt in problem.get("options", [])]
-                result = provider.answer_choice(cover_url, options, problemtype)
-                return result if result else self._build_random_answers(problem)
-        except Exception as e:
-            logger.error("AI answering failed: %s, falling back to random", e)
-            if problemtype == 5:
-                return []
-            return self._build_random_answers(problem)
+        problemtype = problem["problemType"]
+        if problemtype == 5:
+            text = provider.answer_short(cover_url)
+            return {"content": text, "pics": [{"pic": "", "thumb": ""}]}
+        else:
+            options = [opt["key"] for opt in problem["options"]]
+            return provider.answer_choice(cover_url, options, problemtype)
 
     def _start_answer_for_problem(self, problemid: Any, limit: int) -> None:
         for problem in self.problems_ls:
-            if problem.get("problemId") == problemid:
+            if problem["problemId"] == problemid:
                 if problem.get("result") is not None:
                     return
-                problemtype = problem.get("problemType")
+                problemtype = problem["problemType"]
                 mode = self.course_config.get("type%d" % problemtype, "off")
-                if not mode or mode == "off":
+                if mode == "off":
                     return
                 if mode == "ai":
                     answers = self._build_ai_answers(problem)
-                else:
+                elif mode == "random":
                     answers = self._build_random_answers(problem)
-                if not answers:
-                    self.on_event("problem", {
-                        "lesson": self.lessonname,
-                        "lessonid": self.lessonid,
-                        "problemid": problemid,
-                        "status": "no_answer",
-                    })
-                    return
                 threading.Thread(
                     target=self.answer_questions,
-                    args=(problem["problemId"], problemtype, answers, limit),
+                    args=(problemid, problemtype, answers, limit),
                     daemon=True,
                 ).start()
                 return
-        else:
-            self.on_event("problem", {
-                "lesson": self.lessonname,
-                "lessonid": self.lessonid,
-                "problemid": problemid,
-                "status": "not_found",
-            })
 
     def _handle_danmu(self, content: str) -> None:
         if not self.course_config.get("auto_danmu", True):
@@ -286,11 +245,10 @@ class Lesson:
         self.danmu_dict.setdefault(key, [])
         self.danmu_dict[key] = [t for t in self.danmu_dict[key] if now - t <= 60]
 
-        last_sent = self.sent_danmu_dict.get(key, 0)
-        if now - last_sent <= 60:
+        if now - self.sent_danmu_dict.get(key, 0) <= 60:
             return
 
-        danmu_limit = max(1, int(self.course_config.get("danmu_threshold", 3)))
+        danmu_limit = max(1, self.course_config.get("danmu_threshold", 3))
         if len(self.danmu_dict[key]) + 1 >= danmu_limit:
             self.danmu_dict[key] = []
             self.sent_danmu_dict[key] = now
@@ -329,11 +287,8 @@ class Lesson:
                 self.problems_ls.extend(self._get_problems_from_presentation(pid))
 
         elif op == "unlockproblem":
-            problem = data.get("problem", {})
-            sid = problem.get("sid")
-            limit = problem.get("limit", -1)
-            if sid is not None:
-                self._start_answer_for_problem(sid, limit)
+            problem = data["problem"]
+            self._start_answer_for_problem(problem["sid"], problem.get("limit", -1))
 
         elif op == "lessonfinished":
             wsapp.close()
@@ -349,15 +304,14 @@ class Lesson:
                 self._handle_danmu(content)
 
         elif op == "callpaused":
-            name = data.get("name", "")
-            if self.user_uname and name == self.user_uname:
+            if data.get("name") == self.user_uname:
                 self.on_event("call", {"lesson": self.lessonname, "lessonid": self.lessonid})
 
     def _on_error(self, wsapp: websocket.WebSocketApp, error: Exception) -> None:
-        logger.error("WebSocket error for %s: %s", self.lessonname, error)
+        pass
 
     def _on_close(self, wsapp: websocket.WebSocketApp, close_status_code: Any, close_msg: Any) -> None:
-        logger.info("WebSocket closed for %s", self.lessonname)
+        pass
 
     def __eq__(self, other: object) -> bool:
         if not isinstance(other, Lesson):

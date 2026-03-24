@@ -7,11 +7,11 @@ STORE_DIR.mkdir(parents=True, exist_ok=True)
 _CONFIG_PATH = STORE_DIR / "config.json"
 
 DEFAULT_COURSE_CONFIG: dict = {
-    "type1": "random",
-    "type2": "random",
+    "type1": "ai",
+    "type2": "ai",
     "type3": "random",
     "type4": "off",
-    "type5": "off",
+    "type5": "ai",
     "answer_delay_min": 3,
     "answer_delay_max": 10,
     "auto_danmu": True,
@@ -33,8 +33,8 @@ DEFAULT_COURSE_CONFIG: dict = {
 }
 
 DEFAULT_AI_CONFIG: dict = {
-    "keys": [],       # [{"name": str, "provider": str, "key": str}, ...]
-    "active_key": -1,  # index into keys, -1 = none
+    "keys": [],
+    "active_key": -1,
 }
 
 _EMPTY_CONFIG = {"sessionid": "", "user": {}, "course_list": [], "courses": {}, "ai": dict(DEFAULT_AI_CONFIG)}
@@ -67,44 +67,27 @@ def get_course_config(course_id: str) -> dict:
 
 def update_course_config(course_id: str, data: dict) -> None:
     cfg = get_config()
-    courses = cfg.setdefault("courses", {})
-    courses.setdefault(str(course_id), {}).update(data)
+    cfg.setdefault("courses", {}).setdefault(str(course_id), {}).update(data)
     save_config(cfg)
 
 
 def get_ai_config() -> dict:
     cfg = get_config()
     ai = cfg.get("ai", {})
-
-    # Migrate old single-key format
-    if "gemini_api_key" in ai:
-        old_key = ai.pop("gemini_api_key", "")
-        old_provider = ai.pop("provider", "gemini")
-        keys = ai.get("keys", [])
-        if old_key and not keys:
-            keys.append({"name": "Default", "provider": old_provider, "key": old_key})
-            ai["keys"] = keys
-            ai["active_key"] = 0
-        cfg["ai"] = ai
-        save_config(cfg)
-
     merged = dict(DEFAULT_AI_CONFIG)
     merged.update(ai)
-    # Ensure keys is always a list
-    if not isinstance(merged.get("keys"), list):
-        merged["keys"] = []
     return merged
 
 
 def get_active_ai_key() -> tuple:
     """Return (provider, api_key) for the currently active key, or ("", "")."""
     ai = get_ai_config()
-    keys = ai.get("keys", [])
-    idx = ai.get("active_key", -1)
+    keys = ai["keys"]
+    idx = ai["active_key"]
     if idx < 0 or idx >= len(keys):
         return ("", "")
     entry = keys[idx]
-    return (entry.get("provider", ""), entry.get("key", ""))
+    return (entry["provider"], entry["key"])
 
 
 def update_ai_config(data: dict) -> None:

@@ -8,7 +8,7 @@ from typing import Optional
 
 import requests
 import websocket
-from fastapi import FastAPI, WebSocket, WebSocketDisconnect
+from fastapi import FastAPI, WebSocket
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
@@ -19,7 +19,7 @@ from config import (
     DEFAULT_COURSE_CONFIG,
 )
 from monitor import Monitor
-from domains import TSINGHUA_DOMAIN
+from domains import DOMAIN
 from utils import get_user_info, get_all_courses
 
 logging.basicConfig(level=logging.INFO)
@@ -49,43 +49,29 @@ def set_monitor(m: Optional[Monitor]) -> None:
 
 
 def _refresh_local_cache(sessionid: str) -> None:
-    """Fetch user info and course list from Yuketang, cache locally, and
-    ensure every course has default settings in config.json."""
     cfg = get_config()
 
-    try:
-        cfg["user"] = get_user_info(sessionid)
-        logger.info("Cached user info for %s", cfg["user"].get("name", "?"))
-    except Exception as e:
-        logger.warning("Failed to cache user info: %s", e)
+    cfg["user"] = get_user_info(sessionid)
 
-    try:
-        raw_courses = get_all_courses(sessionid)
-        course_list = [
-            {
-                "classroom_id": str(c.get("classroom_id", "")),
-                "name": (c.get("course") or {}).get("name", c.get("name", "")),
-                "classroom_name": c.get("name", ""),
-                "teacher_name": (c.get("teacher") or {}).get("name"),
-            }
-            for c in raw_courses
-        ]
-        cfg["course_list"] = course_list
+    raw_courses = get_all_courses(sessionid)
+    course_list = [
+        {
+            "classroom_id": str(c["classroom_id"]),
+            "name": c["course"]["name"],
+            "classroom_name": c["name"],
+            "teacher_name": c["teacher"]["name"],
+        }
+        for c in raw_courses
+    ]
+    cfg["course_list"] = course_list
 
-        # Ensure every course has default settings
-        courses = cfg.setdefault("courses", {})
-        for c in course_list:
-            cid = c["classroom_id"]
-            if not cid:
-                continue
-            if cid not in courses:
-                courses[cid] = {"name": c["name"], **DEFAULT_COURSE_CONFIG}
-            elif courses[cid].get("name") != c["name"]:
-                courses[cid]["name"] = c["name"]
-
-        logger.info("Cached %d courses and initialised default settings", len(course_list))
-    except Exception as e:
-        logger.warning("Failed to cache courses: %s", e)
+    courses = cfg.setdefault("courses", {})
+    for c in course_list:
+        cid = c["classroom_id"]
+        if cid not in courses:
+            courses[cid] = {"name": c["name"], **DEFAULT_COURSE_CONFIG}
+        elif courses[cid].get("name") != c["name"]:
+            courses[cid]["name"] = c["name"]
 
     save_config(cfg)
 
@@ -96,15 +82,14 @@ def _refresh_local_cache(sessionid: str) -> None:
 
 
 async def _broadcast_events():
-    """Read from the single event_queue and fan out to all subscriber queues."""
     while True:
         event = await event_queue.get()
         dead: list[asyncio.Queue] = []
         for q in _subscribers:
-            try:
-                q.put_nowait(event)
-            except asyncio.QueueFull:
+            if q.full():
                 dead.append(q)
+            else:
+                q.put_nowait(event)
         for q in dead:
             _subscribers.discard(q)
 
@@ -121,7 +106,6 @@ async def lifespan(app: FastAPI):
         m = Monitor(sessionid=cfg["sessionid"], event_queue=event_queue)
         set_monitor(m)
         m.start(loop)
-        logger.info("Monitor auto-started on startup")
 
     yield
 
@@ -130,7 +114,6 @@ async def lifespan(app: FastAPI):
     m = get_monitor()
     if m:
         m.stop()
-        logger.info("Monitor stopped on shutdown")
 
 
 # ---------------------------------------------------------------------------
@@ -153,30 +136,30 @@ app.add_middleware(
 
 
 class NotificationSub(BaseModel):
-    enabled: bool = True
-    signin: bool = True
-    problem: bool = True
-    call: bool = True
-    danmu: bool = False
+    enabled: bool
+    signin: bool
+    problem: bool
+    call: bool
+    danmu: bool
 
 
 class CourseConfig(BaseModel):
-    type1: str = "random"   # single choice: "random" | "ai" | "off"
-    type2: str = "random"   # multiple choice: "random" | "ai" | "off"
-    type3: str = "random"   # vote: "random" | "off"
-    type4: str = "off"      # fill-in-blank: reserved
-    type5: str = "off"      # short answer: "ai" | "off"
-    answer_delay_min: int = 3
-    answer_delay_max: int = 10
-    auto_danmu: bool = True
-    danmu_threshold: int = 3
-    notification: NotificationSub = NotificationSub()
-    voice_notification: NotificationSub = NotificationSub(enabled=False)
+    type1: str
+    type2: str
+    type3: str
+    type4: str
+    type5: str
+    answer_delay_min: int
+    answer_delay_max: int
+    auto_danmu: bool
+    danmu_threshold: int
+    notification: NotificationSub
+    voice_notification: NotificationSub
 
 
 class AIKeyEntry(BaseModel):
     name: str
-    provider: str = "gemini"
+    provider: str
     key: str
 
 class AIActiveKey(BaseModel):
@@ -193,7 +176,7 @@ async def auth_status():
     cfg = get_config()
     if not cfg.get("sessionid"):
         return {"logged_in": False, "user": None}
-    return {"logged_in": True, "user": cfg.get("user", {})}
+    return {"logged_in": True, "user": cfg["user"]}
 
 
 @app.post("/api/auth/logout")
@@ -223,27 +206,23 @@ async def ws_login(ws: WebSocket):
     loop = asyncio.get_event_loop()
     login_queue: asyncio.Queue = asyncio.Queue()
 
-    # --- WebSocket callbacks run in a background thread ---
-
     def on_open(wsapp):
-        data = {
+        wsapp.send(json.dumps({
             "op": "requestlogin",
             "role": "web",
             "version": 1.4,
             "type": "qrcode",
             "from": "web",
-        }
-        wsapp.send(json.dumps(data))
+        }))
 
     def on_message(wsapp, message):
         data = json.loads(message)
-        op = data.get("op", "")
+        op = data["op"]
 
         if op == "requestlogin":
-            ticket = data.get("ticket", "")
             import base64
             resp = requests.get(
-                url=ticket,
+                url=data["ticket"],
                 proxies={"http": None, "https": None},
                 timeout=10,
             )
@@ -255,44 +234,34 @@ async def ws_login(ws: WebSocket):
             )
 
         elif op == "loginsuccess":
-            web_login_url = "https://%s/pc/web_login" % TSINGHUA_DOMAIN
-            login_data = json.dumps(
-                {"UserID": data["UserID"], "Auth": data["Auth"]}
-            )
-            headers = {
-                "User-Agent": (
-                    "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:104.0) "
-                    "Gecko/20100101 Firefox/104.0"
-                )
-            }
             r = requests.post(
-                url=web_login_url,
-                data=login_data,
-                headers=headers,
+                url="https://%s/pc/web_login" % DOMAIN,
+                data=json.dumps({"UserID": data["UserID"], "Auth": data["Auth"]}),
+                headers={
+                    "User-Agent": (
+                        "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:104.0) "
+                        "Gecko/20100101 Firefox/104.0"
+                    )
+                },
                 proxies={"http": None, "https": None},
                 timeout=10,
             )
-            sessionid = dict(r.cookies).get("sessionid", "")
-            if not sessionid:
-                raise ValueError("sessionid not found in login response cookies")
+            sessionid = dict(r.cookies)["sessionid"]
 
             cfg = get_config()
             cfg["sessionid"] = sessionid
             save_config(cfg)
 
             _refresh_local_cache(sessionid)
-            user = get_config().get("user", {})
+            user = get_config()["user"]
 
             asyncio.run_coroutine_threadsafe(
-                login_queue.put(
-                    {"type": "success", "sessionid": sessionid, "user": user}
-                ),
+                login_queue.put({"type": "success", "sessionid": sessionid, "user": user}),
                 loop,
             )
             wsapp.close()
 
     def on_error(wsapp, error):
-        logger.error("Login WS error: %s", error)
         asyncio.run_coroutine_threadsafe(
             login_queue.put({"type": "error", "message": str(error)}), loop
         )
@@ -301,66 +270,49 @@ async def ws_login(ws: WebSocket):
         pass
 
     def qr_refresh_loop(wsapp_ref):
-        """Re-request login every 55 seconds to keep QR fresh."""
         count = 0
         while getattr(wsapp_ref, "_keep_running", True):
             if count >= 55:
                 count = 0
-                wsapp_ref.send(
-                    json.dumps(
-                        {
-                            "op": "requestlogin",
-                            "role": "web",
-                            "version": 1.4,
-                            "type": "qrcode",
-                            "from": "web",
-                        }
-                    )
-                )
+                wsapp_ref.send(json.dumps({
+                    "op": "requestlogin",
+                    "role": "web",
+                    "version": 1.4,
+                    "type": "qrcode",
+                    "from": "web",
+                }))
             else:
                 time.sleep(1)
                 count += 1
 
     wsapp = websocket.WebSocketApp(
-        url="wss://%s/wsapp/" % TSINGHUA_DOMAIN,
+        url="wss://%s/wsapp/" % DOMAIN,
         on_open=on_open,
         on_message=on_message,
         on_error=on_error,
         on_close=on_close,
     )
 
-    ws_thread = threading.Thread(
-        target=wsapp.run_forever, daemon=True, name="login-ws"
-    )
-    ws_thread.start()
+    threading.Thread(target=wsapp.run_forever, daemon=True, name="login-ws").start()
+    threading.Thread(target=qr_refresh_loop, args=(wsapp,), daemon=True, name="login-ws-refresh").start()
 
-    refresh_thread = threading.Thread(
-        target=qr_refresh_loop, args=(wsapp,), daemon=True, name="login-ws-refresh"
-    )
-    refresh_thread.start()
+    while True:
+        msg = await login_queue.get()
+        await ws.send_json(msg)
 
-    try:
-        while True:
-            msg = await login_queue.get()
-            await ws.send_json(msg)
+        if msg["type"] in ("success", "error"):
+            break
 
-            if msg["type"] == "success":
-                new_sid = msg["sessionid"]
-                m = get_monitor()
-                if m:
-                    m.stop()
-                m = Monitor(sessionid=new_sid, event_queue=event_queue)
-                set_monitor(m)
-                m.start(loop)
-                break
+    if msg["type"] == "success":
+        m = get_monitor()
+        if m:
+            m.stop()
+        m = Monitor(sessionid=msg["sessionid"], event_queue=event_queue)
+        set_monitor(m)
+        m.start(loop)
 
-            if msg["type"] == "error":
-                break
-    except WebSocketDisconnect:
-        logger.info("Login WebSocket client disconnected")
-    finally:
-        wsapp._keep_running = False
-        wsapp.close()
+    wsapp._keep_running = False
+    wsapp.close()
 
 
 # ---------------------------------------------------------------------------
@@ -383,31 +335,26 @@ async def get_all_courses_endpoint():
         return []
     cached = cfg.get("course_list", [])
     m = get_monitor()
-    # classroomid (str) -> lessonid
     active_map: dict = {}
     if m:
         for lesson in m.get_active_lessons():
             active_map[str(lesson["classroomid"])] = lesson["lessonid"]
-    result = []
-    for c in cached:
-        cid = str(c.get("classroom_id", ""))
-        result.append({
-            "classroom_id": cid,
-            "name": c.get("name", ""),
-            "classroom_name": c.get("classroom_name", ""),
-            "teacher_name": c.get("teacher_name"),
-            "active": cid in active_map,
-        })
-    return result
+    return [
+        {
+            "classroom_id": c["classroom_id"],
+            "name": c["name"],
+            "classroom_name": c["classroom_name"],
+            "teacher_name": c["teacher_name"],
+            "active": c["classroom_id"] in active_map,
+        }
+        for c in cached
+    ]
 
 
 @app.get("/api/courses/settings")
 async def get_all_course_settings():
     cfg = get_config()
-    result = {}
-    for course_id in cfg.get("courses", {}):
-        result[course_id] = get_course_config(course_id)
-    return result
+    return {cid: get_course_config(cid) for cid in cfg.get("courses", {})}
 
 
 @app.get("/api/courses/settings/{course_id}")
@@ -420,7 +367,6 @@ async def update_course_settings(course_id: str, body: CourseConfig):
     data = body.model_dump()
     update_course_config(course_id, data)
 
-    # Update the running lesson's config if it's active
     m = get_monitor()
     if m:
         with m._lock:
@@ -442,22 +388,20 @@ async def update_course_settings(course_id: str, body: CourseConfig):
 @app.get("/api/ai/settings")
 async def get_ai_settings():
     cfg = get_ai_config()
-    # Mask keys for security
     masked_keys = []
-    for entry in cfg.get("keys", []):
-        raw = entry.get("key", "")
-        masked = raw[:4] + "****" + raw[-4:] if len(raw) > 8 else "****" if raw else ""
+    for entry in cfg["keys"]:
+        raw = entry["key"]
+        masked = raw[:4] + "****" + raw[-4:] if len(raw) > 8 else "****"
         masked_keys.append({**entry, "key": masked})
-    return {"keys": masked_keys, "active_key": cfg.get("active_key", -1)}
+    return {"keys": masked_keys, "active_key": cfg["active_key"]}
 
 
 @app.post("/api/ai/keys")
 async def add_ai_key(body: AIKeyEntry):
     cfg = get_ai_config()
-    keys = cfg.get("keys", [])
+    keys = cfg["keys"]
     keys.append(body.model_dump())
-    # Auto-select if it's the first key
-    active = cfg.get("active_key", -1)
+    active = cfg["active_key"]
     if active < 0:
         active = 0
     update_ai_config({"keys": keys, "active_key": active})
@@ -467,11 +411,9 @@ async def add_ai_key(body: AIKeyEntry):
 @app.delete("/api/ai/keys/{index}")
 async def delete_ai_key(index: int):
     cfg = get_ai_config()
-    keys = cfg.get("keys", [])
-    if index < 0 or index >= len(keys):
-        return {"ok": False, "message": "Invalid index"}
+    keys = cfg["keys"]
     keys.pop(index)
-    active = cfg.get("active_key", -1)
+    active = cfg["active_key"]
     if active >= len(keys):
         active = len(keys) - 1
     elif active > index:
@@ -484,12 +426,7 @@ async def delete_ai_key(index: int):
 
 @app.put("/api/ai/active")
 async def set_active_ai_key(body: AIActiveKey):
-    cfg = get_ai_config()
-    keys = cfg.get("keys", [])
-    idx = body.active_key
-    if idx < -1 or idx >= len(keys):
-        return {"ok": False, "message": "Invalid index"}
-    update_ai_config({"active_key": idx})
+    update_ai_config({"active_key": body.active_key})
     return {"ok": True}
 
 
@@ -501,32 +438,21 @@ async def set_active_ai_key(body: AIActiveKey):
 @app.websocket("/ws/events")
 async def ws_events(ws: WebSocket):
     await ws.accept()
-    logger.info("Events WebSocket client connected")
 
-    # Send persisted history so the dashboard is populated immediately
     history = event_log.load_recent(50)
     if history:
         await ws.send_json({"type": "history", "events": history})
 
-    # Each client gets its own queue fed by the broadcaster
     client_queue: asyncio.Queue = asyncio.Queue(maxsize=200)
     _subscribers.add(client_queue)
 
     async def heartbeat():
-        try:
-            while True:
-                await asyncio.sleep(30)
-                await ws.send_json({"type": "heartbeat"})
-        except (WebSocketDisconnect, RuntimeError):
-            pass
+        while True:
+            await asyncio.sleep(30)
+            await ws.send_json({"type": "heartbeat"})
 
     hb_task = asyncio.create_task(heartbeat())
-    try:
-        while True:
-            event = await client_queue.get()
-            await ws.send_json(event)
-    except (WebSocketDisconnect, RuntimeError):
-        logger.info("Events WebSocket client disconnected")
-    finally:
-        hb_task.cancel()
-        _subscribers.discard(client_queue)
+
+    while True:
+        event = await client_queue.get()
+        await ws.send_json(event)

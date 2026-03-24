@@ -1,38 +1,38 @@
-"""Cross-platform start script for Yuketang Helper."""
-import subprocess, sys, os, signal, json
+import json, subprocess, sys
 from pathlib import Path
+from stop import stop
 
 ROOT = Path(__file__).resolve().parent
 LOG_DIR = ROOT / "logs"
-PID_FILE = LOG_DIR / "pids.json"
-LOG_DIR.mkdir(exist_ok=True)
 
-# Stop existing processes first
-if PID_FILE.exists():
-    for name, pid in json.loads(PID_FILE.read_text()).items():
-        try:
-            os.kill(pid, signal.SIGTERM)
-            print(f"Stopped previous {name} (PID {pid})")
-        except OSError:
-            pass
-    PID_FILE.unlink()
 
-npm = "npm.cmd" if sys.platform == "win32" else "npm"
+def start():
+    stop()
+    LOG_DIR.mkdir(exist_ok=True)
 
-backend = subprocess.Popen(
-    [sys.executable, "-m", "uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"],
-    cwd=ROOT / "backend",
-    stdout=open(LOG_DIR / "backend.log", "w"),
-    stderr=subprocess.STDOUT,
-)
+    kwargs = {"start_new_session": True} if sys.platform != "win32" else \
+             {"creationflags": subprocess.CREATE_NEW_PROCESS_GROUP}
 
-frontend = subprocess.Popen(
-    [npm, "run", "dev", "--", "--host", "0.0.0.0"],
-    cwd=ROOT / "frontend",
-    stdout=open(LOG_DIR / "frontend.log", "w"),
-    stderr=subprocess.STDOUT,
-)
+    backend = subprocess.Popen(
+        [sys.executable, "-m", "uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"],
+        cwd=ROOT / "backend",
+        stdout=open(LOG_DIR / "backend.log", "w"),
+        stderr=subprocess.STDOUT, **kwargs,
+    )
 
-PID_FILE.write_text(json.dumps({"backend": backend.pid, "frontend": frontend.pid}))
+    npm = "npm.cmd" if sys.platform == "win32" else "npm"
+    frontend = subprocess.Popen(
+        [npm, "run", "dev", "--", "--host", "0.0.0.0"],
+        cwd=ROOT / "frontend",
+        stdout=open(LOG_DIR / "frontend.log", "w"),
+        stderr=subprocess.STDOUT, **kwargs,
+    )
 
-print(f"Yuketang Helper is running — http://localhost:5173")
+    (LOG_DIR / "pids.json").write_text(
+        json.dumps({"backend": backend.pid, "frontend": frontend.pid})
+    )
+    print("Yuketang Helper is running — http://localhost:5173")
+
+
+if __name__ == "__main__":
+    start()

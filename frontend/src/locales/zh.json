@@ -1,13 +1,13 @@
 {
   "nav": {
-    "brand": "荷塘雨课堂助手",
+    "brand": "雨课堂助手",
     "login": "登录",
     "dashboard": "仪表盘",
     "settings": "设置"
   },
   "login": {
     "title": "微信扫码登录",
-    "instruction": "打开微信，扫描下方二维码登录荷塘雨课堂。",
+    "instruction": "打开微信，扫描下方二维码登录雨课堂。",
     "scanning": "扫码中...",
     "success": "登录成功！正在跳转...",
     "refresh": "刷新二维码",
