@@ -1,6 +1,6 @@
-# THU Yuketang Helper Web
+# Yuketang Helper Web
 
-A web-based automation tool for Tsinghua University's Yuketang online learning platform. It monitors active lessons in real time and automatically handles sign-ins, quizzes, bullet chats, and roll call notifications.
+A web-based automation tool for Yuketang online learning platform. It monitors active lessons in real time and automatically handles sign-ins, quizzes, bullet chats, and roll call notifications.
 Based on [RainClassroomAssitant](https://github.com/TrickyDeath/RainClassroomAssitant) and [THU-Yuketang-Helper](https://github.com/zhangchi2004/THU-Yuketang-Helper)
 
 ## Features
@@ -17,30 +17,30 @@ Based on [RainClassroomAssitant](https://github.com/TrickyDeath/RainClassroomAss
 
 ### Prerequisites
 
+- [Conda](https://docs.anaconda.com/miniconda/) (recommended)
 - Python 3.7+
 - Node.js + npm
 
 ### Install
 
 ```bash
-# Backend
-cd backend
-pip install -r requirements.txt
-
-# Frontend
-cd ../frontend
-npm install
+pip install -r backend/requirements.txt
+npm install --prefix frontend
 ```
+
+### Configure Domain
+
+The default domain is `HETANG_DOMAIN` (`pro.yuketang.cn`), used by Tsinghua University. If your school uses a different domain, edit `backend/domains.py` and change the `DOMAIN` variable.
 
 ### Run
 
+Starts both frontend and backend from the project root:
+
 ```bash
-# From project root — starts both frontend and backend
 python start.py
 ```
 
-- Frontend: <http://localhost:5173>
-- Backend: <http://localhost:8000>
+Open <http://localhost:5173> in your browser to use the app.
 
 ### Stop
 
@@ -48,16 +48,24 @@ python start.py
 python stop.py
 ```
 
+### Reset
+
+Stops all processes and removes `logs/` and `store/` directories (clears all saved data):
+
+```bash
+python reset.py
+```
+
 ## TODO
 
-- [ ] Add AI quiz answering strategy
-- [ ] Implement Fill-in-the-blank question support
+- [ ] Support multiple LLM APIs
+- [ ] Support Fill-in-the-blank answering
 
 ---
 
-# THU 雨课堂助手 Web 版
+# 雨课堂助手 Web 版
 
-基于 Web 的清华大学雨课堂自动化工具。实时监控进行中的课程，自动处理签到、答题、弹幕和点名通知。
+基于 Web 的雨课堂自动化工具。实时监控进行中的课程，自动处理签到、答题、弹幕和点名通知。
 基于 [RainClassroomAssitant](https://github.com/TrickyDeath/RainClassroomAssitant) 和 [THU-Yuketang-Helper](https://github.com/zhangchi2004/THU-Yuketang-Helper)
 
 ## 功能
@@ -74,30 +82,30 @@ python stop.py
 
 ### 环境要求
 
+- [Conda](https://docs.anaconda.com/miniconda/)（推荐）
 - Python 3.7+
 - Node.js + npm
 
 ### 安装
 
 ```bash
-# 后端
-cd backend
-pip install -r requirements.txt
-
-# 前端
-cd ../frontend
-npm install
+pip install -r backend/requirements.txt
+npm install --prefix frontend
 ```
+
+### 配置域名
+
+默认域名为 `HETANG_DOMAIN`（`pro.yuketang.cn`），清华大学使用。如果你的学校使用其他域名，请编辑 `backend/domains.py`，修改 `DOMAIN` 变量。
 
 ### 启动
 
+在项目根目录下运行，同时启动前端和后端：
+
 ```bash
-# 在项目根目录下运行 — 同时启动前端和后端
 python start.py
 ```
 
-- 前端：<http://localhost:5173>
-- 后端：<http://localhost:8000>
+在浏览器中打开 <http://localhost:5173> 即可使用。
 
 ### 停止
 
@@ -105,7 +113,15 @@ python start.py
 python stop.py
 ```
 
+### 重置
+
+停止所有进程并删除 `logs/` 和 `store/` 目录（清除所有保存的数据）：
+
+```bash
+python reset.py
+```
+
 ## 待办
 
-- [ ] 添加 AI 答题策略
-- [ ] 支持填空题
+- [ ] 支持多种 LLM API
+- [ ] 支持填空题答题

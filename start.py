@@ -31,7 +31,9 @@ def start():
     (LOG_DIR / "pids.json").write_text(
         json.dumps({"backend": backend.pid, "frontend": frontend.pid})
     )
-    print("Yuketang Helper is running — http://localhost:5173")
+    print("Yuketang Helper is running")
+    print("  Frontend: http://localhost:5173")
+    print("  Backend:  http://localhost:8000")
 
 
 if __name__ == "__main__":
