@@ -127,6 +127,7 @@ class Lesson:
             "lesson": self.lessonname,
             "lessonid": self.lessonid,
             "problemid": problemid,
+            "problemtype": problemtype,
             "answers": answers,
             "status": "success" if result["code"] == 0 else "error",
             "message": result.get("msg", ""),
