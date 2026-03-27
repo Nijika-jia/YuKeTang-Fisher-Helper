@@ -83,7 +83,7 @@ class GeminiProvider(AIProvider):
 
 class QwenProvider(AIProvider):
     BASE_URL = "https://api-inference.modelscope.cn/v1"
-    DEFAULT_MODEL = "Qwen/Qwen2-VL-72B-Instruct"
+    DEFAULT_MODEL = "Qwen/Qwen3.5-397B-A17B"
 
     def __init__(self, api_key: str, model: str = DEFAULT_MODEL):
         from openai import OpenAI

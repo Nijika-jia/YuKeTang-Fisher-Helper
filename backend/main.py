@@ -9,7 +9,7 @@ from typing import Optional
 
 import requests
 import websocket
-from fastapi import FastAPI, WebSocket
+from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
@@ -321,14 +321,17 @@ async def ws_login(ws: WebSocket):
     threading.Thread(target=wsapp.run_forever, daemon=True, name="login-ws").start()
     threading.Thread(target=qr_refresh_loop, args=(wsapp,), daemon=True, name="login-ws-refresh").start()
 
-    while True:
-        msg = await login_queue.get()
-        await ws.send_json(msg)
+    try:
+        while True:
+            msg = await login_queue.get()
+            await ws.send_json(msg)
 
-        if msg["type"] in ("success", "error"):
-            break
+            if msg["type"] in ("success", "error"):
+                break
+    except (WebSocketDisconnect, RuntimeError):
+        msg = None
 
-    if msg["type"] == "success":
+    if msg and msg.get("type") == "success":
         m = get_monitor()
         if m:
             m.stop()
@@ -483,9 +486,15 @@ async def ws_events(ws: WebSocket):
 
     hb_task = asyncio.create_task(heartbeat())
 
-    while True:
-        event = await client_queue.get()
-        await ws.send_json(event)
+    try:
+        while True:
+            event = await client_queue.get()
+            await ws.send_json(event)
+    except (WebSocketDisconnect, RuntimeError):
+        pass
+    finally:
+        hb_task.cancel()
+        _subscribers.discard(client_queue)
 
 
 # ---------------------------------------------------------------------------
