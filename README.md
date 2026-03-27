@@ -27,9 +27,15 @@ docker compose up -d --build
 
 Open <http://localhost:8000> in your browser to use the app.
 
-### Get Gemini API Key
+### Stop
 
-To use AI-powered quiz answering, you need a Gemini API key. Visit [Google AI Studio](https://aistudio.google.com/), go to the [Get API Key page](https://aistudio.google.com/api-keys), and click **Create API Key** to generate one.
+To stop the app, stop the container via Docker.
+
+### Get AI API Key
+
+**Google** — Log in at [Google AI Studio](https://aistudio.google.com/), go to the [Get API Key page](https://aistudio.google.com/api-keys), and click **Create API Key**.
+
+**ModelScope** — Log in at [ModelScope](https://modelscope.cn/), then go to [Account Settings → Access Control](https://modelscope.cn/my/access/token), and click **Create Your Token**.
 
 ## TODO
 
@@ -67,9 +73,15 @@ docker compose up -d --build
 
 在浏览器中打开 <http://localhost:8000> 即可使用。
 
-### 获取 Gemini API Key
+### 停止
 
-如需使用 AI 自动答题功能，需要 Gemini API Key。前往 [Google AI Studio](https://aistudio.google.com/)，前往 [Get API Key 页面](https://aistudio.google.com/api-keys)，点击 **Create API Key** 即可生成。
+通过 Docker 停止容器。
+
+### 获取 AI API Key
+
+**Google** — 登录 [Google AI Studio](https://aistudio.google.com/)，进入[Get API Key page](https://aistudio.google.com/api-keys)，点击 **Create API Key** 即可生成。
+
+**ModelScope** — 登录 [ModelScope](https://modelscope.cn/)，前往[账号设置 → 访问控制](https://modelscope.cn/my/access/token)，点击 **新建访问令牌** 获取 API Key。
 
 ## 待办
 

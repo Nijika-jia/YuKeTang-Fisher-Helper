@@ -69,6 +69,7 @@ export default function App() {
 
   return (
     <div className="app">
+      <div className="sticky-header">
       <nav className="navbar">
         <div className="navbar-brand">{t('nav.brand')}</div>
         <div className="navbar-links">
@@ -91,16 +92,7 @@ export default function App() {
                 {t('nav.settings')}
               </NavLink>
             </>
-          ) : (
-            <NavLink
-              to="/login"
-              className={({ isActive }) =>
-                isActive ? 'nav-link active' : 'nav-link'
-              }
-            >
-              {t('nav.login')}
-            </NavLink>
-          )}
+          ) : null}
         </div>
         <div className="navbar-actions">
           <button className="btn-ghost btn-sm" onClick={toggleLanguage}>
@@ -113,6 +105,12 @@ export default function App() {
           )}
         </div>
       </nav>
+
+      <div className="beta-banner">
+        <strong className="beta-banner-label">{t('common.betaLabel')}</strong>
+        {t('common.betaWarning')}
+      </div>
+      </div>
 
       <main className="main-content">
         <Routes>

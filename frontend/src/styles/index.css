@@ -49,7 +49,7 @@ body {
 
 body {
   font-family: var(--font-sans);
-  font-size: 14px;
+  font-size: 20px;
   line-height: 1.6;
   color: var(--color-text);
   background-color: var(--color-bg);
@@ -74,6 +74,29 @@ body {
 }
 
 /* ===========================
+   Beta Banner
+   =========================== */
+.sticky-header {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.beta-banner {
+  background: #fffbe6;
+  border-bottom: 1px solid #ffe58f;
+  color: #7c5700;
+  font-size: 16px;
+  padding: 7px 24px;
+  text-align: center;
+}
+
+.beta-banner-label {
+  font-weight: 700;
+  margin-right: 8px;
+}
+
+/* ===========================
    Navbar
    =========================== */
 .navbar {
@@ -84,9 +107,6 @@ body {
   background: var(--color-nav-bg);
   border-bottom: 1px solid var(--color-nav-border);
   box-shadow: var(--shadow-sm);
-  position: sticky;
-  top: 0;
-  z-index: 100;
   gap: 24px;
 }
 
@@ -109,6 +129,7 @@ body {
   border-radius: var(--radius-sm);
   color: var(--color-text-muted);
   text-decoration: none;
+  font-size: 14px;
   font-weight: 500;
   transition: color var(--transition), background var(--transition);
 }

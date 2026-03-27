@@ -12,7 +12,7 @@
     "refresh": "Refresh QR Code",
     "waiting": "Waiting for QR code...",
     "error": "Login error. Please try again.",
-    "note": "Note: Scanning only grants access to your Yuketang session for monitoring.",
+    "note": "Note: Scanning only grants access to your Yuketang session for monitoring. All user data, session information, and API keys are stored locally on your device only.",
     "server": "Server"
   },
   "dashboard": {
@@ -97,6 +97,8 @@
     "logout": "Logout",
     "on": "On",
     "off": "Off",
-    "unknown": "Unknown"
+    "unknown": "Unknown",
+    "betaLabel": "Caveat",
+    "betaWarning": "AI answer accuracy is not guaranteed. If no API key is configured, random answering is used as fallback. If the key is misconfigured or the AI call fails, questions may go unanswered."
   }
 }

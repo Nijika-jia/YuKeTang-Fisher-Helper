@@ -28,6 +28,11 @@ interface AIKeyEntry {
   key: string
 }
 
+const PROVIDER_LABELS: Record<string, string> = {
+  google: 'Google',
+  qwen: 'Qwen (ModelScope)',
+}
+
 interface AISettings {
   keys: AIKeyEntry[]
   active_key: number
@@ -360,7 +365,7 @@ export default function Settings() {
                 <div key={idx} className={`ai-key-item ${idx === ai.active_key ? 'ai-key-active' : ''}`}>
                   <div className="ai-key-info">
                     <span className="ai-key-name">{entry.name}</span>
-                    <span className="ai-key-provider">{entry.provider}</span>
+                    <span className="ai-key-provider">{PROVIDER_LABELS[entry.provider] ?? entry.provider}</span>
                     <span className="ai-key-masked">{entry.key}</span>
                   </div>
                   <div className="ai-key-actions">
@@ -397,6 +402,7 @@ export default function Settings() {
                 onChange={(e) => setNewKey({ ...newKey, provider: e.target.value })}
               >
                 <option value="google">Google</option>
+                <option value="qwen">Qwen (ModelScope)</option>
               </select>
               <input
                 type="password"

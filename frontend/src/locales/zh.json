@@ -12,7 +12,7 @@
     "refresh": "刷新二维码",
     "waiting": "等待二维码...",
     "error": "登录出错，请重试。",
-    "note": "注：扫码仅用于获取您的雨课堂会话以便监听课程信息。",
+    "note": "注：扫码仅用于获取您的雨课堂会话以便监听课程信息。所有用户数据、Session 与 API 密钥均仅储存在本地设备上，不会上传至任何服务器。",
     "server": "服务器"
   },
   "dashboard": {
@@ -69,7 +69,7 @@
     "danmu": "弹幕",
     "notifications": "通知",
     "applyToAll": "应用到全部",
-    "default": "恢复默认"
+    "default": "默认设置"
   },
   "events": {
     "signin": "签到",
@@ -97,6 +97,8 @@
     "logout": "退出登录",
     "on": "开启",
     "off": "关闭",
-    "unknown": "未知"
+    "unknown": "未知",
+    "betaLabel": "警告",
+    "betaWarning": "不保证 AI 自动答题的准确性。未配置 API 密钥时将回退为随机答题；若密钥配置有误或 AI 调用失败，题目可能直接跳过不作答。"
   }
 }
