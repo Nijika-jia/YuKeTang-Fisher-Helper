@@ -1,5 +1,8 @@
 import json
 from pathlib import Path
+from typing import Any
+
+import requests
 
 STORE_DIR = Path(__file__).resolve().parent.parent / "store"
 STORE_DIR.mkdir(parents=True, exist_ok=True)
@@ -114,3 +117,44 @@ def set_domain(domain: str) -> None:
     cfg = get_config()
     cfg["domain"] = domain
     save_config(cfg)
+
+
+# ---------------------------------------------------------------------------
+# Shared HTTP helpers
+# ---------------------------------------------------------------------------
+
+
+def make_headers(sessionid: str) -> dict:
+    domain = get_domain()
+    return {
+        "Cookie": "sessionid=%s" % sessionid,
+        "User-Agent": (
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:97.0) "
+            "Gecko/20100101 Firefox/97.0"
+        ),
+        "Referer": "https://%s/" % domain,
+        "xt-agent": "web",
+    }
+
+
+def api_url(template: str, **kwargs: Any) -> str:
+    return template.format(domain=get_domain(), **kwargs)
+
+
+def api_get(url_template: str, headers: dict, **url_kwargs: Any) -> requests.Response:
+    return requests.get(
+        url=api_url(url_template, **url_kwargs),
+        headers=headers,
+        proxies={"http": None, "https": None},
+        timeout=10,
+    )
+
+
+def api_post(url_template: str, headers: dict, payload: dict, **url_kwargs: Any) -> requests.Response:
+    return requests.post(
+        url=api_url(url_template, **url_kwargs),
+        headers=headers,
+        data=json.dumps(payload),
+        proxies={"http": None, "https": None},
+        timeout=10,
+    )

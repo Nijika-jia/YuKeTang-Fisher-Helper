@@ -17,44 +17,19 @@ Based on [RainClassroomAssitant](https://github.com/TrickyDeath/RainClassroomAss
 
 ### Prerequisites
 
-- [Conda](https://docs.anaconda.com/miniconda/) (recommended)
-- Python 3.7+
-- Node.js + npm
-
-### Install
-
-```bash
-pip install -r backend/requirements.txt
-npm install --prefix frontend
-```
+- [Docker](https://www.docker.com/)
 
 ### Run
 
-Starts both frontend and backend from the project root:
-
 ```bash
-python start.py
+docker compose up -d --build
 ```
 
-Open <http://localhost:5173> in your browser to use the app.
+Open <http://localhost:8000> in your browser to use the app.
 
 ### Get Gemini API Key
 
 To use AI-powered quiz answering, you need a Gemini API key. Visit [Google AI Studio](https://aistudio.google.com/), go to the [Get API Key page](https://aistudio.google.com/api-keys), and click **Create API Key** to generate one.
-
-### Stop
-
-```bash
-python stop.py
-```
-
-### Reset
-
-Stops all processes and removes `logs/` and `store/` directories (clears all saved data):
-
-```bash
-python reset.py
-```
 
 ## TODO
 
@@ -82,44 +57,19 @@ python reset.py
 
 ### 环境要求
 
-- [Conda](https://docs.anaconda.com/miniconda/)（推荐）
-- Python 3.7+
-- Node.js + npm
-
-### 安装
-
-```bash
-pip install -r backend/requirements.txt
-npm install --prefix frontend
-```
+- [Docker](https://www.docker.com/)
 
 ### 启动
 
-在项目根目录下运行，同时启动前端和后端：
-
 ```bash
-python start.py
+docker compose up -d --build
 ```
 
-在浏览器中打开 <http://localhost:5173> 即可使用。
+在浏览器中打开 <http://localhost:8000> 即可使用。
 
 ### 获取 Gemini API Key
 
 如需使用 AI 自动答题功能，需要 Gemini API Key。前往 [Google AI Studio](https://aistudio.google.com/)，前往 [Get API Key 页面](https://aistudio.google.com/api-keys)，点击 **Create API Key** 即可生成。
-
-### 停止
-
-```bash
-python stop.py
-```
-
-### 重置
-
-停止所有进程并删除 `logs/` 和 `store/` 目录（清除所有保存的数据）：
-
-```bash
-python reset.py
-```
 
 ## 待办
 

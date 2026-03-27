@@ -20,6 +20,7 @@ interface ActivityEvent {
   content?: string
   answers?: unknown[]
   problemid?: unknown
+  problemtype?: number
 }
 
 // Map event type to the VoiceConfig suboption key
@@ -39,8 +40,20 @@ function formatEventLabel(event: ActivityEvent, t: (key: string) => string): str
   switch (event.type) {
     case 'signin':
       return `${lesson}${typeName}: ${t(`events.${event.status || 'success'}`)}`
-    case 'problem':
-      return `${lesson}${typeName}: ${t(`events.${event.status || 'success'}`)}`
+    case 'problem': {
+      const problemTypeName = event.problemtype
+        ? t(`events.problemType${event.problemtype}`)
+        : typeName
+      const statusText = t(`events.${event.status || 'success'}`)
+      const answerText = event.answers
+        ? Array.isArray(event.answers)
+          ? event.answers.join(', ')
+          : typeof event.answers === 'object'
+            ? JSON.stringify(event.answers)
+            : String(event.answers)
+        : ''
+      return `${lesson}${problemTypeName}: ${statusText}${answerText ? `, answer: ${answerText}` : ''}`
+    }
     case 'danmu':
       return `${lesson}${typeName}: "${event.content || ''}" — ${t(`events.${event.status || 'success'}`)}`
     case 'call':
@@ -204,6 +217,7 @@ export default function Dashboard() {
             content: m['content'] as string | undefined,
             answers: m['answers'] as unknown[] | undefined,
             problemid: m['problemid'],
+            problemtype: m['problemtype'] as number | undefined,
           }))
           setEvents(historical.reverse()) // newest first
           fetchAllCourses()
@@ -223,6 +237,7 @@ export default function Dashboard() {
           content: msg['content'] as string | undefined,
           answers: msg['answers'] as unknown[] | undefined,
           problemid: msg['problemid'],
+          problemtype: msg['problemtype'] as number | undefined,
         }
 
         setEvents((prev) => [event, ...prev].slice(0, 50))
@@ -318,7 +333,9 @@ export default function Dashboard() {
               <div key={event.id} className="activity-entry">
                 <span className="activity-time">{event.timestamp}</span>
                 <span className={eventBadgeClass(event)}>
-                  {t(`events.${event.type}`) || event.type}
+                  {event.type === 'problem' && event.problemtype
+                    ? t(`events.problemType${event.problemtype}`)
+                    : t(`events.${event.type}`) || event.type}
                 </span>
                 <span className="activity-text">
                   {formatEventLabel(event, t)}

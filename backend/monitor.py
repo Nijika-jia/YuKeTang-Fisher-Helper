@@ -5,13 +5,14 @@ import time
 from typing import Dict, Optional
 
 import event_log
-from config import get_course_config, update_course_config
+from config import get_course_config, update_course_config, make_headers, api_get
 from lesson import Lesson
-from utils import get_on_lesson
 
 logger = logging.getLogger(__name__)
 
 POLL_INTERVAL = 30
+
+URL_ON_LESSON = "https://{domain}/api/v3/classroom/on-lesson-upcoming-exam"
 
 
 class Monitor:
@@ -57,7 +58,8 @@ class Monitor:
     def _run(self) -> None:
         while self._running:
             try:
-                lesson_list = get_on_lesson(self.sessionid)
+                headers = make_headers(self.sessionid)
+                lesson_list = api_get(URL_ON_LESSON, headers).json()["data"]["onLessonClassrooms"]
             except Exception:
                 logger.exception("Failed to poll lessons")
                 lesson_list = []

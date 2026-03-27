@@ -3,20 +3,23 @@ import logging
 import random
 import threading
 import time
-from typing import Callable, Dict, List, Optional, Any
+from typing import Any, Callable, Dict, List, Optional
 
 import requests
 import websocket
 
 from ai_provider import AIProvider, create_provider
-from config import get_active_ai_key
-from config import get_domain
-from utils import _make_headers, get_user_info
+from config import api_get, api_post, api_url, get_active_ai_key, get_config, make_headers
 
 logger = logging.getLogger(__name__)
 
-def _wss_url() -> str:
-    return "wss://%s/wsapp/" % get_domain()
+# API URLs
+URL_WSS = "wss://{domain}/wsapp/"
+URL_CHECKIN = "https://{domain}/api/v3/lesson/checkin"
+URL_BASIC_INFO = "https://{domain}/api/v3/lesson/basic-info"
+URL_DANMU_SEND = "https://{domain}/api/v3/lesson/danmu/send"
+URL_PROBLEM_ANSWER = "https://{domain}/api/v3/lesson/problem/answer"
+URL_PRESENTATION_FETCH = "https://{domain}/api/v3/lesson/presentation/fetch?presentation_id={presentation_id}"
 
 
 class Lesson:
@@ -34,7 +37,7 @@ class Lesson:
         self.course_config = course_config
         self.on_event = on_event
 
-        self.headers = _make_headers(sessionid)
+        self.headers = make_headers(sessionid)
         self.auth: Optional[str] = None
         self.wsapp: Optional[websocket.WebSocketApp] = None
         self._running = False
@@ -56,12 +59,11 @@ class Lesson:
         self._running = True
         self._checkin()
         self.wsapp = websocket.WebSocketApp(
-            url=_wss_url(),
+            url=api_url(URL_WSS),
             header=self.headers,
             on_open=self._on_open,
             on_message=self._on_message,
-            on_error=self._on_error,
-            on_close=self._on_close,
+
         )
         self.wsapp.run_forever(ping_interval=30, ping_timeout=10)
         self._running = False
@@ -76,23 +78,17 @@ class Lesson:
 
     def send_danmu(self, content: str) -> None:
         payload = {
-            "extra": "",
-            "fromStart": "50",
             "lessonId": self.lessonid,
-            "message": content,
-            "requiredCensor": False,
-            "showStatus": True,
             "target": "",
             "userName": "",
+            "message": content,
+            "extra": "",
+            "requiredCensor": False,
             "wordCloud": True,
+            "showStatus": True,
+            "fromStart": "50",
         }
-        r = requests.post(
-            url="https://%s/api/v3/lesson/danmu/send" % get_domain(),
-            headers=self.headers,
-            data=json.dumps(payload),
-            proxies={"http": None, "https": None},
-            timeout=10,
-        )
+        r = self._post(URL_DANMU_SEND, payload)
         self.on_event("danmu", {
             "lesson": self.lessonname,
             "lessonid": self.lessonid,
@@ -115,13 +111,7 @@ class Lesson:
             "dt": int(time.time() * 1000),
             "result": answers,
         }
-        r = requests.post(
-            url="https://%s/api/v3/lesson/problem/answer" % get_domain(),
-            headers=self.headers,
-            data=json.dumps(payload),
-            proxies={"http": None, "https": None},
-            timeout=10,
-        )
+        r = self._post(URL_PROBLEM_ANSWER, payload)
         result = r.json()
         self.on_event("problem", {
             "lesson": self.lessonname,
@@ -137,14 +127,14 @@ class Lesson:
     # Internal helpers
     # ------------------------------------------------------------------
 
+    def _post(self, url_template: str, payload: dict, **url_kwargs: Any) -> requests.Response:
+        return api_post(url_template, self.headers, payload, **url_kwargs)
+
+    def _get(self, url_template: str, **url_kwargs: Any) -> requests.Response:
+        return api_get(url_template, self.headers, **url_kwargs)
+
     def _checkin(self) -> None:
-        r = requests.post(
-            url="https://%s/api/v3/lesson/checkin" % get_domain(),
-            headers=self.headers,
-            data=json.dumps({"source": 5, "lessonId": self.lessonid}),
-            proxies={"http": None, "https": None},
-            timeout=10,
-        )
+        r = self._post(URL_CHECKIN, {"source": 21, "lessonId": self.lessonid})
         set_auth = r.headers.get("Set-Auth")
         if set_auth:
             self.headers["Authorization"] = "Bearer %s" % set_auth
@@ -152,16 +142,11 @@ class Lesson:
         result = r.json()
         self.auth = result["data"]["lessonToken"]
 
-        user_data = get_user_info(self.sessionid)
-        self.user_uid = user_data["id"]
-        self.user_uname = user_data["name"]
+        user = get_config().get("user", {})
+        self.user_uid = user.get("id")
+        self.user_uname = user.get("name")
 
-        info = requests.get(
-            url="https://%s/api/v3/lesson/basic-info" % get_domain(),
-            headers=self.headers,
-            proxies={"http": None, "https": None},
-            timeout=10,
-        ).json()["data"]
+        info = self._get(URL_BASIC_INFO).json()["data"]
         self.teacher_name = (info.get("teacher") or {}).get("name")
 
         self.on_event("signin", {
@@ -172,12 +157,7 @@ class Lesson:
         })
 
     def _get_problems_from_presentation(self, presentation_id: Any) -> List[dict]:
-        r = requests.get(
-            url="https://%s/api/v3/lesson/presentation/fetch?presentation_id=%s" % (get_domain(), presentation_id),
-            headers=self.headers,
-            proxies={"http": None, "https": None},
-            timeout=10,
-        )
+        r = self._get(URL_PRESENTATION_FETCH, presentation_id=presentation_id)
         data = r.json()["data"]
         problems = []
         for slide in data.get("slides", []):
@@ -186,6 +166,13 @@ class Lesson:
                 problem["_cover"] = slide.get("cover", "")
                 problems.append(problem)
         return problems
+
+    def _add_problems(self, problems: List[dict]) -> None:
+        existing_ids = {p["problemId"] for p in self.problems_ls}
+        for p in problems:
+            if p["problemId"] not in existing_ids:
+                self.problems_ls.append(p)
+                existing_ids.add(p["problemId"])
 
     def _build_random_answers(self, problem: dict) -> list:
         problemtype = problem["problemType"]
@@ -286,19 +273,19 @@ class Lesson:
             if current and current not in presentation_ids:
                 presentation_ids.append(current)
             for pid in presentation_ids:
-                self.problems_ls.extend(self._get_problems_from_presentation(pid))
+                self._add_problems(self._get_problems_from_presentation(pid))
 
         elif op == "unlockproblem":
             problem = data["problem"]
-            self._start_answer_for_problem(problem["sid"], problem.get("limit", -1))
+            self._start_answer_for_problem(problem["sid"], problem.get("limit", -1) - 1)
 
         elif op == "lessonfinished":
             wsapp.close()
 
-        elif op in ("presentationupdated", "presentationcreated"):
+        elif op in ("presentationupdated", "presentationcreated", "showpresentation"):
             pid = data.get("presentation")
             if pid:
-                self.problems_ls.extend(self._get_problems_from_presentation(pid))
+                self._add_problems(self._get_problems_from_presentation(pid))
 
         elif op == "newdanmu":
             content = data.get("danmu", "")
@@ -308,17 +295,3 @@ class Lesson:
         elif op == "callpaused":
             if data.get("name") == self.user_uname:
                 self.on_event("call", {"lesson": self.lessonname, "lessonid": self.lessonid})
-
-    def _on_error(self, wsapp: websocket.WebSocketApp, error: Exception) -> None:
-        pass
-
-    def _on_close(self, wsapp: websocket.WebSocketApp, close_status_code: Any, close_msg: Any) -> None:
-        pass
-
-    def __eq__(self, other: object) -> bool:
-        if not isinstance(other, Lesson):
-            return NotImplemented
-        return self.lessonid == other.lessonid
-
-    def __hash__(self) -> int:
-        return hash(self.lessonid)

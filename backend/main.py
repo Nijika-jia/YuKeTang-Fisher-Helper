@@ -4,12 +4,15 @@ import logging
 import threading
 import time
 from contextlib import asynccontextmanager
+from pathlib import Path
 from typing import Optional
 
 import requests
 import websocket
 from fastapi import FastAPI, WebSocket
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse
+from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
 import event_log
@@ -17,10 +20,16 @@ from config import (
     get_config, save_config, get_course_config, update_course_config,
     get_ai_config, update_ai_config,
     get_domain, set_domain,
+    make_headers, api_url, api_get,
     DEFAULT_COURSE_CONFIG, DOMAIN_OPTIONS,
 )
 from monitor import Monitor
-from utils import get_user_info, get_all_courses
+
+# API URLs (used only in main.py)
+URL_WSS = "wss://{domain}/wsapp/"
+URL_USER_INFO = "https://{domain}/api/v3/user/basic-info"
+URL_COURSE_LIST = "https://{domain}/v2/api/web/courses/list?identity=2"
+URL_WEB_LOGIN = "https://{domain}/pc/web_login"
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -50,10 +59,11 @@ def set_monitor(m: Optional[Monitor]) -> None:
 
 def _refresh_local_cache(sessionid: str) -> None:
     cfg = get_config()
+    headers = make_headers(sessionid)
 
-    cfg["user"] = get_user_info(sessionid)
+    cfg["user"] = api_get(URL_USER_INFO, headers).json()["data"]
 
-    raw_courses = get_all_courses(sessionid)
+    raw_courses = api_get(URL_COURSE_LIST, headers).json()["data"]["list"]
     course_list = [
         {
             "classroom_id": str(c["classroom_id"]),
@@ -250,7 +260,7 @@ async def ws_login(ws: WebSocket):
 
         elif op == "loginsuccess":
             r = requests.post(
-                url="https://%s/pc/web_login" % get_domain(),
+                url=api_url(URL_WEB_LOGIN),
                 data=json.dumps({"UserID": data["UserID"], "Auth": data["Auth"]}),
                 headers={
                     "User-Agent": (
@@ -301,7 +311,7 @@ async def ws_login(ws: WebSocket):
                 count += 1
 
     wsapp = websocket.WebSocketApp(
-        url="wss://%s/wsapp/" % get_domain(),
+        url=api_url(URL_WSS),
         on_open=on_open,
         on_message=on_message,
         on_error=on_error,
@@ -476,3 +486,20 @@ async def ws_events(ws: WebSocket):
     while True:
         event = await client_queue.get()
         await ws.send_json(event)
+
+
+# ---------------------------------------------------------------------------
+# Static file serving (production)
+# ---------------------------------------------------------------------------
+
+_STATIC_DIR = Path(__file__).resolve().parent / "static"
+
+if _STATIC_DIR.is_dir():
+    app.mount("/assets", StaticFiles(directory=_STATIC_DIR / "assets"), name="assets")
+
+    @app.get("/{full_path:path}")
+    async def serve_spa(full_path: str):
+        file = _STATIC_DIR / full_path
+        if file.is_file():
+            return FileResponse(file)
+        return FileResponse(_STATIC_DIR / "index.html")
