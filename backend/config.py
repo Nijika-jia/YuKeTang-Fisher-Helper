@@ -1,7 +1,15 @@
 import json
+import os
 import sys
 from pathlib import Path
 from typing import Any
+
+# Bypass system proxy for all outbound requests from the backend.
+# On Windows the system proxy (e.g. socks4 from Clash/V2Ray) is read from the
+# registry and can cause "Unknown scheme" errors in requests/httpx.  Yuketang
+# API servers are domestic and don't need a proxy.  AI provider SDKs manage
+# their own HTTP clients and are not affected by this setting.
+os.environ.setdefault("NO_PROXY", "*")
 
 import requests
 

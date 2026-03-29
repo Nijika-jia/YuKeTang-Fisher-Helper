@@ -333,6 +333,12 @@ class Lesson:
         }))
 
     def _on_message(self, wsapp: websocket.WebSocketApp, message: str) -> None:
+        try:
+            self._handle_message(wsapp, message)
+        except Exception:
+            logger.exception("Error handling websocket message")
+
+    def _handle_message(self, wsapp: websocket.WebSocketApp, message: str) -> None:
         data = json.loads(message)
         op = data.get("op", "")
 
