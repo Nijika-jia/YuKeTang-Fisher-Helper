@@ -5,7 +5,7 @@
 
 ## 功能
 
-- **自动签到** — 课程开始时自动签到
+- **自动签到** — 自动完成签到（模拟通过 APP 扫二维码进入课堂）
 - **自动答题** — 支持单选、多选、投票和简答题，可配置答题策略（随机、空白或 AI）
 - **自动弹幕** — 自动发送弹幕消息
 - **点名提醒** — 点名时发送通知提醒
@@ -61,7 +61,7 @@
 - **Python**：运行 `python stop.py`
 - **Docker**：在 Docker Desktop 的 Containers 界面停止 container
 
-## 获取 AI API密钥
+## 获取 AI API密钥（免费）
 
 - **ModelScope**: 登录 [ModelScope](https://modelscope.cn/)，**先在[账号设置](https://modelscope.cn/my/settings/account)中绑定阿里云账号**，然后前往[访问控制](https://modelscope.cn/my/access/token)，点击 **新建访问令牌**
 
@@ -82,7 +82,7 @@ Based on [RainClassroomAssitant](https://github.com/TrickyDeath/RainClassroomAss
 
 ## Features
 
-- **Auto Sign-in** — Automatically checks in when a lesson starts
+- **Auto Sign-in** — Automatically checks in (simulates scanning the QR code via the app to enter the classroom)
 - **Auto Quiz Answering** — Handles single/multiple choice, voting, and short-answer questions with configurable strategies (random, blank, or AI)
 - **Auto Danmu** — Sends bullet chat messages automatically
 - **Roll Call Notifications** — Alerts you when roll call happens
@@ -138,7 +138,7 @@ Based on [RainClassroomAssitant](https://github.com/TrickyDeath/RainClassroomAss
 - **Python**: Run `python stop.py`
 - **Docker**: Stop the container in the Containers tab of Docker Desktop
 
-## Get AI API Key
+## Get AI API Key (Free)
 
 - **ModelScope**: Log in at [ModelScope](https://modelscope.cn/), **first bind your Alibaba Cloud account in [Account Settings](https://modelscope.cn/my/settings/account)**, then go to [Access Control](https://modelscope.cn/my/access/token) and click **Create Your Token**
 
