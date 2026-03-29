@@ -11,6 +11,7 @@ Output:
 
 import sys
 from pathlib import Path
+import certifi
 
 ROOT = Path(SPECPATH)
 
@@ -22,8 +23,11 @@ a = Analysis(
         (str(ROOT / "frontend" / "dist"), "static"),
         # Backend source files (imported at runtime)
         (str(ROOT / "backend"), "backend"),
+        # CA certificates for SSL/TLS
+        (certifi.where(), "certifi"),
     ],
     hiddenimports=[
+        "certifi",
         # Uvicorn internals that are dynamically imported
         "uvicorn.logging",
         "uvicorn.loops",

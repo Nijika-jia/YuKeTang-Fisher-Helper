@@ -3,14 +3,18 @@ Entry point for the PyInstaller-packaged Yuketang Helper application.
 Starts the FastAPI server and opens the browser automatically.
 """
 
+import os
 import sys
 import webbrowser
 from pathlib import Path
 
 # When frozen, add the backend directory (bundled inside _MEIPASS) to sys.path
-# so that `import config`, `import monitor`, etc. resolve correctly.
+# and set SSL certificate path so that outbound HTTPS/WSS connections work.
 if getattr(sys, "frozen", False):
     sys.path.insert(0, str(Path(sys._MEIPASS) / "backend"))
+    import certifi
+    os.environ["SSL_CERT_FILE"] = certifi.where()
+    os.environ["REQUESTS_CA_BUNDLE"] = certifi.where()
 else:
     sys.path.insert(0, str(Path(__file__).resolve().parent / "backend"))
 
