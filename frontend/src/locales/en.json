@@ -11,7 +11,6 @@
     "success": "Login successful! Redirecting...",
     "refresh": "Refresh QR Code",
     "waiting": "Waiting for QR code...",
-    "error": "Login error. Please try again.",
     "note": "Note: Scanning only grants access to your Yuketang session for monitoring. All user data, session information, and API keys are stored locally on your device only.",
     "server": "Server"
   },
@@ -88,7 +87,9 @@
     "success": "success",
     "error": "error",
     "no_answer": "no answer",
-    "not_found": "not found"
+    "not_found": "not found",
+    "source_ai": "AI",
+    "source_random": "random"
   },
   "common": {
     "yes": "Yes",

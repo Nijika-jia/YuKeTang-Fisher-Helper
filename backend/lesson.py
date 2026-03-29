@@ -96,7 +96,7 @@ class Lesson:
             "status": "success" if r.json()["code"] == 0 else "error",
         })
 
-    def answer_questions(self, problemid: Any, problemtype: int, answers: Any, limit: int) -> None:
+    def answer_questions(self, problemid: Any, problemtype: int, answers: Any, limit: int, source: str = "random") -> None:
         wait_time = random.uniform(self.course_config["answer_delay_min"], self.course_config["answer_delay_max"])
         if limit != -1 and wait_time >= limit:
             wait_time = max(0, limit - 2)
@@ -119,6 +119,7 @@ class Lesson:
             "problemid": problemid,
             "problemtype": problemtype,
             "answers": answers,
+            "source": source,
             "status": "success" if result["code"] == 0 else "error",
             "message": result.get("msg", ""),
         })
@@ -215,12 +216,18 @@ class Lesson:
                 if mode == "off":
                     return
                 if mode == "ai":
-                    answers = self._build_ai_answers(problem)
-                elif mode == "random":
+                    if self._get_ai_provider():
+                        answers = self._build_ai_answers(problem)
+                        actual_source = "ai"
+                    else:
+                        answers = self._build_random_answers(problem)
+                        actual_source = "random"
+                else:
                     answers = self._build_random_answers(problem)
+                    actual_source = "random"
                 threading.Thread(
                     target=self.answer_questions,
-                    args=(problemid, problemtype, answers, limit),
+                    args=(problemid, problemtype, answers, limit, actual_source),
                     daemon=True,
                 ).start()
                 return

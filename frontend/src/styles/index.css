@@ -346,10 +346,6 @@ button:disabled {
   color: var(--color-success);
 }
 
-.qr-error {
-  color: var(--color-danger);
-}
-
 .qr-overlay {
   position: absolute;
   inset: 0;
@@ -366,12 +362,6 @@ button:disabled {
 .success-icon {
   font-size: 40px;
   color: var(--color-success);
-  font-weight: 700;
-}
-
-.error-icon {
-  font-size: 40px;
-  color: var(--color-danger);
   font-weight: 700;
 }
 

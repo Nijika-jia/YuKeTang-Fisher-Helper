@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 
-type LoginStatus = 'waiting' | 'qr_ready' | 'scanning' | 'success' | 'error'
+type LoginStatus = 'waiting' | 'qr_ready' | 'scanning' | 'success'
 
 interface ServerOption {
   key: string
@@ -20,7 +20,6 @@ export default function Login({ onSuccess }: LoginProps) {
   const wsRef = useRef<WebSocket | null>(null)
   const [status, setStatus] = useState<LoginStatus>('waiting')
   const [qrUrl, setQrUrl] = useState<string>('')
-  const [errorMsg, setErrorMsg] = useState<string>('')
   const [domain, setDomain] = useState<string>('')
   const [serverOptions, setServerOptions] = useState<ServerOption[]>([])
   const domainRef = useRef<string>('')
@@ -55,7 +54,6 @@ export default function Login({ onSuccess }: LoginProps) {
   function connectWs() {
     setStatus('waiting')
     setQrUrl('')
-    setErrorMsg('')
 
     const protocol = window.location.protocol === 'https:' ? 'wss' : 'ws'
     const ws = new WebSocket(`${protocol}://${window.location.host}/ws/login`)
@@ -80,9 +78,6 @@ export default function Login({ onSuccess }: LoginProps) {
         setStatus('success')
         onSuccess()
         setTimeout(() => navigate('/dashboard'), 1000)
-      } else if (type === 'error') {
-        setErrorMsg((msg['message'] as string) || t('login.error'))
-        setStatus('error')
       }
     }
   }
@@ -143,15 +138,10 @@ export default function Login({ onSuccess }: LoginProps) {
             </div>
           )}
 
-          {status === 'error' && (
-            <div className="qr-placeholder qr-error">
-              <div className="error-icon">✕</div>
-              <span>{errorMsg || t('login.error')}</span>
-            </div>
-          )}
+
         </div>
 
-        {(status === 'qr_ready' || status === 'error') && (
+        {status === 'qr_ready' && (
           <button className="btn btn-secondary" onClick={handleRefresh}>
             {t('login.refresh')}
           </button>

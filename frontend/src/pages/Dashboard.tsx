@@ -21,6 +21,7 @@ interface ActivityEvent {
   answers?: unknown[]
   problemid?: unknown
   problemtype?: number
+  source?: string
 }
 
 // Map event type to the VoiceConfig suboption key
@@ -52,7 +53,8 @@ function formatEventLabel(event: ActivityEvent, t: (key: string) => string): str
             ? JSON.stringify(event.answers)
             : String(event.answers)
         : ''
-      return `${lesson}${problemTypeName}: ${statusText}${answerText ? `, answer: ${answerText}` : ''}`
+      const sourceText = event.source ? ` [${t(`events.source_${event.source}`)}]` : ''
+      return `${lesson}${problemTypeName}: ${statusText}${answerText ? `, answer: ${answerText}` : ''}${sourceText}`
     }
     case 'danmu':
       return `${lesson}${typeName}: "${event.content || ''}" — ${t(`events.${event.status || 'success'}`)}`
@@ -218,6 +220,7 @@ export default function Dashboard() {
             answers: m['answers'] as unknown[] | undefined,
             problemid: m['problemid'],
             problemtype: m['problemtype'] as number | undefined,
+            source: m['source'] as string | undefined,
           }))
           setEvents(historical.reverse()) // newest first
           fetchAllCourses()
@@ -238,6 +241,7 @@ export default function Dashboard() {
           answers: msg['answers'] as unknown[] | undefined,
           problemid: msg['problemid'],
           problemtype: msg['problemtype'] as number | undefined,
+          source: msg['source'] as string | undefined,
         }
 
         setEvents((prev) => [event, ...prev].slice(0, 50))
