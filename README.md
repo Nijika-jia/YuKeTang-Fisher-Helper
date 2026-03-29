@@ -25,7 +25,7 @@ Based on [RainClassroomAssitant](https://github.com/TrickyDeath/RainClassroomAss
 docker compose up -d --build
 ```
 
-Open <http://localhost:8000> in your browser to use the app.
+Open <http://localhost:9000> in your browser to use the app.
 
 ### Stop
 
@@ -71,7 +71,7 @@ To stop the app, stop the container via Docker.
 docker compose up -d --build
 ```
 
-在浏览器中打开 <http://localhost:8000> 即可使用。
+在浏览器中打开 <http://localhost:9000> 即可使用。
 
 ### 停止
 
