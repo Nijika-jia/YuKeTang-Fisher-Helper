@@ -8,7 +8,7 @@ from typing import Any, Callable, Dict, List, Optional
 import requests
 import websocket
 
-from ai_provider import create_provider
+from ai_provider import AIProvider, create_provider
 from config import api_get, api_post, api_url, get_active_ai_key, get_config, make_headers
 
 logger = logging.getLogger(__name__)
