@@ -25,8 +25,8 @@ DEFAULT_COURSE_CONFIG: dict = {
     "type3": "random",
     "type4": "off",
     "type5": "ai",
-    "answer_delay_min": 3,
-    "answer_delay_max": 10,
+    "answer_delay_min": 1,
+    "answer_delay_max": 2,
     "auto_danmu": True,
     "danmu_threshold": 3,
     "notification": {

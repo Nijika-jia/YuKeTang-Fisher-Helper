@@ -70,16 +70,14 @@ jobs:
 
       - name: Prepare release files
         run: |
+          VERSION=${GITHUB_REF#refs/tags/}
           mkdir -p release
-          cp artifacts/YuketangHelper-Windows/YuketangHelper.exe release/YuketangHelper-Windows.exe
-          cp artifacts/YuketangHelper-macOS/YuketangHelper release/YuketangHelper-macOS
-          cp artifacts/YuketangHelper-Linux/YuketangHelper release/YuketangHelper-Linux
-          chmod +x release/YuketangHelper-macOS release/YuketangHelper-Linux
+          cp artifacts/YuketangHelper-Windows/YuketangHelper.exe "release/YuketangHelper-Windows-${VERSION}.exe"
+          cp artifacts/YuketangHelper-macOS/YuketangHelper "release/YuketangHelper-macOS-${VERSION}"
+          cp artifacts/YuketangHelper-Linux/YuketangHelper "release/YuketangHelper-Linux-${VERSION}"
+          chmod +x "release/YuketangHelper-macOS-${VERSION}" "release/YuketangHelper-Linux-${VERSION}"
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          files: |
-            release/YuketangHelper-Windows.exe
-            release/YuketangHelper-macOS
-            release/YuketangHelper-Linux
+          files: release/*

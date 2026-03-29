@@ -49,7 +49,7 @@
 
 - **Google**: 登录 [Google AI Studio](https://aistudio.google.com/)，进入 [Get API Key page](https://aistudio.google.com/api-keys)，点击 **Create API Key**。
 
-- **ModelScope**: 登录 [ModelScope](https://modelscope.cn/)，**先在[账号设置](https://modelscope.cn/my/setting)中绑定阿里云账号**，然后前往[访问控制](https://modelscope.cn/my/access/token)，点击 **新建访问令牌**。
+- **ModelScope**: 登录 [ModelScope](https://modelscope.cn/)，**先在[账号设置](https://modelscope.cn/my/settings/account)中绑定阿里云账号**，然后前往[访问控制](https://modelscope.cn/my/access/token)，点击 **新建访问令牌**。
 
 ## 待办
 
@@ -109,7 +109,7 @@ Based on [RainClassroomAssitant](https://github.com/TrickyDeath/RainClassroomAss
 
 - **Google**: Log in at [Google AI Studio](https://aistudio.google.com/), go to the [Get API Key page](https://aistudio.google.com/api-keys), and click **Create API Key**.
 
-- **ModelScope**: Log in at [ModelScope](https://modelscope.cn/), **first bind your Alibaba Cloud account in [Account Settings](https://modelscope.cn/my/setting)**, then go to [Access Control](https://modelscope.cn/my/access/token) and click **Create Your Token**.
+- **ModelScope**: Log in at [ModelScope](https://modelscope.cn/), **first bind your Alibaba Cloud account in [Account Settings](https://modelscope.cn/my/settings/account)**, then go to [Access Control](https://modelscope.cn/my/access/token) and click **Create Your Token**.
 
 ## TODO
 

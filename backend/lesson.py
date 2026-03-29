@@ -96,34 +96,6 @@ class Lesson:
             "status": "success" if r.json()["code"] == 0 else "error",
         })
 
-    def answer_questions(self, problemid: Any, problemtype: int, answers: Any, limit: int, source: str = "random") -> None:
-        wait_time = random.uniform(self.course_config["answer_delay_min"], self.course_config["answer_delay_max"])
-        if limit != -1 and wait_time >= limit:
-            wait_time = max(0, limit - 2)
-        if wait_time > 0:
-            time.sleep(wait_time)
-        if not self._running:
-            return
-
-        payload = {
-            "problemId": problemid,
-            "problemType": problemtype,
-            "dt": int(time.time() * 1000),
-            "result": answers,
-        }
-        r = self._post(URL_PROBLEM_ANSWER, payload)
-        result = r.json()
-        self.on_event("problem", {
-            "lesson": self.lessonname,
-            "lessonid": self.lessonid,
-            "problemid": problemid,
-            "problemtype": problemtype,
-            "answers": answers,
-            "source": source,
-            "status": "success" if result["code"] == 0 else "error",
-            "message": result.get("msg", ""),
-        })
-
     # ------------------------------------------------------------------
     # Internal helpers
     # ------------------------------------------------------------------
@@ -194,10 +166,9 @@ class Lesson:
     def _build_ai_answers(self, problem: dict) -> list | dict:
         provider = self._get_ai_provider()
         if not provider:
-            return self._build_random_answers(problem)
+            raise RuntimeError("No AI provider available")
 
         cover_url = problem.get("_cover", "")
-
         problemtype = problem["problemType"]
         if problemtype == 5:
             text = provider.answer_short(cover_url)
@@ -206,25 +177,103 @@ class Lesson:
             options = [opt["key"] for opt in problem["options"]]
             return provider.answer_choice(cover_url, options, problemtype)
 
-    _AI_FALLBACK_RESERVE = 5  # seconds reserved for fallback to random
+    # ------------------------------------------------------------------
+    # Answer submission
+    # ------------------------------------------------------------------
+    #
+    # Answering logic:
+    #   - AI mode: send LLM API request immediately, submit answer as soon
+    #     as the response arrives. If any error occurs or remaining time
+    #     <= 5 seconds, emit an "ai_failed" notification so the user can
+    #     answer manually, and submit a random answer at the 5-second mark
+    #     as a safety net.
+    #   - Random mode: wait for answer_delay, then submit a random answer.
+    #
 
-    def _build_ai_answers_with_timeout(self, problem: dict, timeout: float) -> tuple:
-        """Try AI answering with a timeout. Returns (answers, source)."""
+    _AI_FALLBACK_RESERVE = 5  # seconds before deadline to submit random fallback
+
+    def _submit_answer(self, problemid: Any, problemtype: int, answers: Any, source: str) -> None:
+        """Submit an answer to the server and emit a problem event."""
+        payload = {
+            "problemId": problemid,
+            "problemType": problemtype,
+            "dt": int(time.time() * 1000),
+            "result": answers,
+        }
+        r = self._post(URL_PROBLEM_ANSWER, payload)
+        result = r.json()
+        self.on_event("problem", {
+            "lesson": self.lessonname,
+            "lessonid": self.lessonid,
+            "problemid": problemid,
+            "problemtype": problemtype,
+            "answers": answers,
+            "source": source,
+            "status": "success" if result["code"] == 0 else "error",
+            "message": result.get("msg", ""),
+        })
+
+    def _answer_with_ai(self, problem: dict, problemid: Any, problemtype: int, limit: int) -> None:
+        """AI answering thread: try AI immediately, fall back to random on failure."""
+        start_time = time.time()
+
+        # Try AI with a timeout so we still have time for the random fallback.
+        ai_timeout = max(1, limit - self._AI_FALLBACK_RESERVE) if limit > 0 else None
         result_holder = [None]
 
-        def _run():
+        def _call_ai():
             try:
                 result_holder[0] = self._build_ai_answers(problem)
             except Exception:
-                logger.exception("AI answering failed")
+                logger.exception("AI answering failed for problem %s", problemid)
 
-        t = threading.Thread(target=_run, daemon=True)
+        t = threading.Thread(target=_call_ai, daemon=True)
         t.start()
-        t.join(timeout=timeout)
+        t.join(timeout=ai_timeout)
+
+        if not self._running:
+            return
+
         if result_holder[0] is not None:
-            return result_holder[0], "ai"
-        logger.warning("AI timeout/failure for problem %s, falling back to random", problem["problemId"])
-        return self._build_random_answers(problem), "random"
+            # AI succeeded — submit immediately.
+            self._submit_answer(problemid, problemtype, result_holder[0], "ai")
+            return
+
+        # AI failed or timed out — notify user and schedule random fallback.
+        logger.warning("AI failed for problem %s, falling back to random", problemid)
+        self.on_event("problem", {
+            "lesson": self.lessonname,
+            "lessonid": self.lessonid,
+            "problemid": problemid,
+            "problemtype": problemtype,
+            "status": "ai_failed",
+        })
+
+        if limit > 0:
+            # Wait until 5 seconds before deadline, then submit random.
+            elapsed = time.time() - start_time
+            fallback_wait = max(0, limit - self._AI_FALLBACK_RESERVE - elapsed)
+            if fallback_wait > 0:
+                time.sleep(fallback_wait)
+            if not self._running:
+                return
+        random_answers = self._build_random_answers(problem)
+        self._submit_answer(problemid, problemtype, random_answers, "random")
+
+    def _answer_with_random(self, problem: dict, problemid: Any, problemtype: int, limit: int) -> None:
+        """Random answering thread: wait for answer_delay, then submit."""
+        delay = random.uniform(
+            self.course_config["answer_delay_min"],
+            self.course_config["answer_delay_max"],
+        )
+        if limit > 0:
+            delay = min(delay, max(0, limit - 2))
+        if delay > 0:
+            time.sleep(delay)
+        if not self._running:
+            return
+        answers = self._build_random_answers(problem)
+        self._submit_answer(problemid, problemtype, answers, "random")
 
     def _start_answer_for_problem(self, problemid: Any, limit: int) -> None:
         for problem in self.problems_ls:
@@ -235,26 +284,19 @@ class Lesson:
                 mode = self.course_config.get("type%d" % problemtype, "off")
                 if mode == "off":
                     return
-                if mode == "ai":
-                    if self._get_ai_provider():
-                        if limit > 0:
-                            delay_max = self.course_config.get("answer_delay_max", 10)
-                            ai_timeout = max(1, limit - self._AI_FALLBACK_RESERVE - delay_max)
-                            answers, actual_source = self._build_ai_answers_with_timeout(problem, ai_timeout)
-                        else:
-                            answers = self._build_ai_answers(problem)
-                            actual_source = "ai"
-                    else:
-                        answers = self._build_random_answers(problem)
-                        actual_source = "random"
+
+                if mode == "ai" and self._get_ai_provider():
+                    threading.Thread(
+                        target=self._answer_with_ai,
+                        args=(problem, problemid, problemtype, limit),
+                        daemon=True,
+                    ).start()
                 else:
-                    answers = self._build_random_answers(problem)
-                    actual_source = "random"
-                threading.Thread(
-                    target=self.answer_questions,
-                    args=(problemid, problemtype, answers, limit, actual_source),
-                    daemon=True,
-                ).start()
+                    threading.Thread(
+                        target=self._answer_with_random,
+                        args=(problem, problemid, problemtype, limit),
+                        daemon=True,
+                    ).start()
                 return
 
     def _handle_danmu(self, content: str) -> None:

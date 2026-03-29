@@ -90,7 +90,8 @@
     "not_found": "题目未找到",
     "source_ai": "AI",
     "source_random": "随机",
-    "answer": "答案"
+    "answer": "答案",
+    "ai_failed": "AI答题失败，请手动作答！将在最后5秒提交随机答案保底"
   },
   "common": {
     "yes": "是",

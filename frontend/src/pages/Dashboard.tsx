@@ -45,6 +45,9 @@ function formatEventLabel(event: ActivityEvent, t: (key: string) => string): str
       const problemTypeName = event.problemtype
         ? t(`events.problemType${event.problemtype}`)
         : typeName
+      if (event.status === 'ai_failed') {
+        return `${lesson}${problemTypeName}: ${t('events.ai_failed')}`
+      }
       const statusText = t(`events.${event.status || 'success'}`)
       const answerText = event.answers
         ? Array.isArray(event.answers)

@@ -18,6 +18,15 @@ if getattr(sys, "frozen", False):
 else:
     sys.path.insert(0, str(Path(__file__).resolve().parent / "backend"))
 
+# Clear proxy env vars with unsupported schemes (e.g. socks4) that cause
+# errors in httpx/requests. http, https, and socks5 proxies are kept.
+_PROXY_VARS = ("HTTP_PROXY", "HTTPS_PROXY", "ALL_PROXY",
+               "http_proxy", "https_proxy", "all_proxy")
+for _var in _PROXY_VARS:
+    _val = os.environ.get(_var, "")
+    if _val and not _val.startswith(("http://", "https://", "socks5://")):
+        os.environ.pop(_var, None)
+
 import uvicorn
 from main import app  # noqa: E402
 

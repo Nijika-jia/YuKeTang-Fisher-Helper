@@ -90,7 +90,8 @@
     "not_found": "not found",
     "source_ai": "AI",
     "source_random": "random",
-    "answer": "answer"
+    "answer": "answer",
+    "ai_failed": "AI answering failed, please answer manually! Random answer will be submitted in the last 5 seconds"
   },
   "common": {
     "yes": "Yes",
