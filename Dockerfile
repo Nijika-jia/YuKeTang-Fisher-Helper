@@ -7,7 +7,7 @@ COPY frontend/ ./
 RUN npm run build
 
 # Stage 2: Runtime
-FROM python:3.12-slim
+FROM python:3.14-slim
 WORKDIR /app
 
 COPY backend/requirements.txt ./
@@ -18,4 +18,4 @@ COPY --from=frontend-build /app/frontend/dist ./static
 
 EXPOSE 8000
 
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "9000"]

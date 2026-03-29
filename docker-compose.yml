@@ -2,7 +2,7 @@ services:
   yuketang-helper:
     build: .
     ports:
-      - "9000:9000"
+      - "8000:8000"
     volumes:
       - store_data:/store
     restart: unless-stopped
