@@ -14,7 +14,7 @@ def start():
              {"creationflags": subprocess.CREATE_NEW_PROCESS_GROUP}
 
     backend = subprocess.Popen(
-        [sys.executable, "-m", "uvicorn", "main:app", "--host", "0.0.0.0", "--port", "9000"],
+        [sys.executable, "-m", "uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8500"],
         cwd=ROOT / "backend",
         stdout=open(LOG_DIR / "backend.log", "w"),
         stderr=subprocess.STDOUT, **kwargs,
@@ -33,7 +33,7 @@ def start():
     )
     print("Yuketang Helper is running")
     print("  Frontend: http://localhost:3000")
-    print("  Backend:  http://localhost:9000")
+    print("  Backend:  http://localhost:8500")
 
 
 if __name__ == "__main__":
