@@ -20,6 +20,10 @@ logs/
 # macOS
 .DS_Store
 
+# PyInstaller
+build/
+dist/
+
 .claude/
 .vscode/
 .venv/

@@ -1,10 +1,20 @@
 import json
+import sys
 from pathlib import Path
 from typing import Any
 
 import requests
 
-STORE_DIR = Path(__file__).resolve().parent.parent / "store"
+
+def _get_base_dir() -> Path:
+    """Return the project root directory, handling both normal and PyInstaller environments."""
+    if getattr(sys, "frozen", False):
+        # Running as a PyInstaller bundle — use the directory containing the exe
+        return Path(sys.executable).resolve().parent
+    return Path(__file__).resolve().parent.parent
+
+
+STORE_DIR = _get_base_dir() / "store"
 STORE_DIR.mkdir(parents=True, exist_ok=True)
 
 _CONFIG_PATH = STORE_DIR / "config.json"

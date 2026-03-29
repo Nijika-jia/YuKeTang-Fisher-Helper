@@ -1,6 +1,7 @@
 import asyncio
 import json
 import logging
+import sys
 import threading
 import time
 from contextlib import asynccontextmanager
@@ -501,7 +502,16 @@ async def ws_events(ws: WebSocket):
 # Static file serving (production)
 # ---------------------------------------------------------------------------
 
-_STATIC_DIR = Path(__file__).resolve().parent / "static"
+
+def _get_static_dir() -> Path:
+    """Locate the frontend static files in both normal and PyInstaller environments."""
+    if getattr(sys, "frozen", False):
+        # PyInstaller bundle — files are extracted to sys._MEIPASS
+        return Path(sys._MEIPASS) / "static"
+    return Path(__file__).resolve().parent / "static"
+
+
+_STATIC_DIR = _get_static_dir()
 
 if _STATIC_DIR.is_dir():
     app.mount("/assets", StaticFiles(directory=_STATIC_DIR / "assets"), name="assets")
