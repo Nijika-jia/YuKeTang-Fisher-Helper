@@ -22,7 +22,7 @@ def start():
 
     npm = "npm.cmd" if sys.platform == "win32" else "npm"
     frontend = subprocess.Popen(
-        [npm, "run", "dev", "--", "--host", "0.0.0.0"],
+        [npm, "run", "dev", "--", "--host", "0.0.0.0", "--port", "3000"],
         cwd=ROOT / "frontend",
         stdout=open(LOG_DIR / "frontend.log", "w"),
         stderr=subprocess.STDOUT, **kwargs,
