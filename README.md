@@ -15,6 +15,15 @@
 
 ## 快速开始
 
+### 方式一：下载可执行文件（推荐）
+
+1. 前往 [Releases 页面](https://github.com/dvdsanyi/Yuketang-Helper-Web/releases)，下载对应平台的可执行文件。
+2. 运行可执行文件，浏览器会自动打开 <http://localhost:8500>。
+
+> macOS 用户需先运行 `chmod +x YuketangHelper-macOS`，如遇安全提示请前往 **系统设置 → 隐私与安全性** 点击"仍要打开"。
+
+### 方式二：Docker 部署
+
 1. [下载源代码 ZIP](https://codeload.github.com/dvdsanyi/Yuketang-Helper-Web/zip/refs/heads/main) 并解压，或使用 Git Clone。
 1. 下载并安装 [Docker Desktop](https://www.docker.com/)。
 1. 打开 Docker Desktop。
@@ -28,11 +37,13 @@
 
 ## 启动
 
-- 在 Docker Desktop 的 Containers 界面启动 container，然后在浏览器中打开 <http://localhost:8500> 即可使用。
+- **可执行文件**：直接运行可执行文件即可。
+- **Docker**：在 Docker Desktop 的 Containers 界面启动 container，然后在浏览器中打开 <http://localhost:8500>。
 
 ## 停止
 
-- 在 Docker Desktop 的 Containers 界面停止 container。
+- **可执行文件**：关闭终端窗口，或按 `Ctrl+C`。
+- **Docker**：在 Docker Desktop 的 Containers 界面停止 container。
 
 ## 获取 AI API密钥
 
@@ -64,6 +75,15 @@ Based on [RainClassroomAssitant](https://github.com/TrickyDeath/RainClassroomAss
 
 ## Quick Start
 
+### Option 1: Download Executable (Recommended)
+
+1. Go to the [Releases page](https://github.com/dvdsanyi/Yuketang-Helper-Web/releases) and download the executable for your platform.
+2. Run the executable — your browser will automatically open <http://localhost:8500>.
+
+> macOS users: run `chmod +x YuketangHelper-macOS` first. If you see a security warning, go to **System Settings → Privacy & Security** and click "Open Anyway".
+
+### Option 2: Docker Deployment
+
 1. [Download source code ZIP](https://codeload.github.com/dvdsanyi/Yuketang-Helper-Web/zip/refs/heads/main) and extract, or use Git Clone.
 1. Download and install [Docker Desktop](https://www.docker.com/).
 1. Open Docker Desktop.
@@ -77,11 +97,13 @@ Based on [RainClassroomAssitant](https://github.com/TrickyDeath/RainClassroomAss
 
 ## Run
 
-- Start the container in the Containers tab of Docker Desktop, then open <http://localhost:8500> in your browser.
+- **Executable**: Simply run the executable file.
+- **Docker**: Start the container in the Containers tab of Docker Desktop, then open <http://localhost:8500> in your browser.
 
 ## Stop
 
-- Stop the container in the Containers tab of Docker Desktop.
+- **Executable**: Close the terminal window, or press `Ctrl+C`.
+- **Docker**: Stop the container in the Containers tab of Docker Desktop.
 
 ## Get AI API Key
 
