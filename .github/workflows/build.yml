@@ -68,17 +68,18 @@ jobs:
         with:
           path: artifacts
 
-      - name: Rename artifacts for release
+      - name: Prepare release files
         run: |
-          mv artifacts/YuketangHelper-Windows/YuketangHelper.exe artifacts/YuketangHelper-Windows.exe
-          mv artifacts/YuketangHelper-macOS/YuketangHelper artifacts/YuketangHelper-macOS
-          mv artifacts/YuketangHelper-Linux/YuketangHelper artifacts/YuketangHelper-Linux
-          chmod +x artifacts/YuketangHelper-macOS artifacts/YuketangHelper-Linux
+          mkdir -p release
+          cp artifacts/YuketangHelper-Windows/YuketangHelper.exe release/YuketangHelper-Windows.exe
+          cp artifacts/YuketangHelper-macOS/YuketangHelper release/YuketangHelper-macOS
+          cp artifacts/YuketangHelper-Linux/YuketangHelper release/YuketangHelper-Linux
+          chmod +x release/YuketangHelper-macOS release/YuketangHelper-Linux
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
           files: |
-            artifacts/YuketangHelper-Windows.exe
-            artifacts/YuketangHelper-macOS
-            artifacts/YuketangHelper-Linux
+            release/YuketangHelper-Windows.exe
+            release/YuketangHelper-macOS
+            release/YuketangHelper-Linux
