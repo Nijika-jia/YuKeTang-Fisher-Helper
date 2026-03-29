@@ -124,7 +124,7 @@ export default function Dashboard() {
     fetch('/api/courses/all')
       .then((r) => r.json())
       .then((data: CourseItem[]) => setAllCourses(data))
-      .catch(() => {})
+      .catch(() => { })
   }, [])
 
   const fetchLessons = useCallback(() => {
@@ -137,7 +137,7 @@ export default function Dashboard() {
         }
         lessonToClassroomRef.current = map
       })
-      .catch(() => {})
+      .catch(() => { })
   }, [])
 
   // Fetch and cache per-course notification + voice_notification configs
@@ -155,7 +155,7 @@ export default function Dashboard() {
         notifConfigsRef.current = notifMap
         voiceConfigsRef.current = voiceMap
       })
-      .catch(() => {})
+      .catch(() => { })
   }, [])
 
   useEffect(() => {
@@ -273,7 +273,7 @@ export default function Dashboard() {
         }
       }
 
-      ws.onerror = () => {}
+      ws.onerror = () => { }
       ws.onclose = () => {
         if (!unmounted) {
           reconnectTimer = setTimeout(connect, 3000)

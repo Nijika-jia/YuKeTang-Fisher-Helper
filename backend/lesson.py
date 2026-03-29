@@ -162,7 +162,7 @@ class Lesson:
         provider_name, api_key = get_active_ai_key()
         return create_provider(provider_name, api_key)
 
-    def _build_ai_answers(self, problem: dict) -> list | dict:
+    def _build_ai_answers(self, problem: dict) -> list | str:
         provider = self._get_ai_provider()
         if not provider:
             raise RuntimeError("No AI provider available")
@@ -170,11 +170,9 @@ class Lesson:
         cover_url = problem.get("_cover", "")
         problemtype = problem["problemType"]
         if problemtype == 5:
-            text = provider.answer_short(cover_url)
-            return {"content": text, "pics": [{"pic": "", "thumb": ""}]}
+            return provider.answer_short(cover_url)
         else:
-            options = [opt["key"] for opt in problem["options"]]
-            return provider.answer_choice(cover_url, options, problemtype)
+            return provider.answer_choice(cover_url, [opt["key"] for opt in problem["options"]], problemtype)
 
     # ------------------------------------------------------------------
     # Answer submission
@@ -183,21 +181,24 @@ class Lesson:
     # Answering logic:
     #   - AI mode: send LLM API request immediately, submit answer as soon
     #     as the response arrives. If any error occurs or remaining time
-    #     <= 5 seconds, emit an "ai_failed" notification so the user can
-    #     answer manually, and submit a random answer at the 5-second mark
+    #     <= _AI_FALLBACK_RESERVE seconds, emit an "ai_failed" notification so the user can
+    #     answer manually, and submit a random/blank answer at the _AI_FALLBACK_RESERVE-second mark
     #     as a safety net.
     #   - Random mode: wait for answer_delay, then submit a random answer.
-    #
+    #   - Blank mode: wait for answer_delay, then submit a blank answer.
 
     _AI_FALLBACK_RESERVE = 5  # seconds before deadline to submit random fallback
 
-    def _submit_answer(self, problemid: Any, problemtype: int, answers: Any, source: str) -> None:
-        """Submit an answer to the server and emit a problem event."""
+    def _submit_answer(self, problemid: Any, problemtype: int, real_answer: Any, source: str) -> None:
+        if problemtype == 5:
+            payload_result = {"content": real_answer, "pics": [{"pic": "", "thumb": ""}]}
+        else:
+            payload_result = real_answer
         payload = {
             "problemId": problemid,
             "problemType": problemtype,
             "dt": int(time.time() * 1000),
-            "result": answers,
+            "result": payload_result,
         }
         r = self._post(URL_PROBLEM_ANSWER, payload)
         result = r.json()
@@ -206,20 +207,20 @@ class Lesson:
             "lessonid": self.lessonid,
             "problemid": problemid,
             "problemtype": problemtype,
-            "answers": answers,
+            "answers": real_answer,
             "source": source,
             "status": "success" if result["code"] == 0 else "error",
             "message": result.get("msg", ""),
         })
 
     def _answer_with_ai(self, problem: dict, problemid: Any, problemtype: int, limit: int) -> None:
-        """AI answering thread: try AI immediately, fall back to random on failure."""
         start_time = time.time()
 
         # Try AI with a timeout so we still have time for the random fallback.
         ai_timeout = max(1, limit - self._AI_FALLBACK_RESERVE) if limit > 0 else None
         result_holder = [None]
 
+        logger.info("Attempting AI answer for problem %s with timeout %s seconds", problemid, ai_timeout)
         def _call_ai():
             try:
                 result_holder[0] = self._build_ai_answers(problem)
@@ -238,8 +239,6 @@ class Lesson:
             self._submit_answer(problemid, problemtype, result_holder[0], "ai")
             return
 
-        # AI failed or timed out — notify user and schedule random fallback.
-        logger.warning("AI failed for problem %s, falling back to random", problemid)
         self.on_event("problem", {
             "lesson": self.lessonname,
             "lessonid": self.lessonid,
@@ -249,18 +248,21 @@ class Lesson:
         })
 
         if limit > 0:
-            # Wait until 5 seconds before deadline, then submit random.
+            # Wait until 5 seconds before deadline.
             elapsed = time.time() - start_time
             fallback_wait = max(0, limit - self._AI_FALLBACK_RESERVE - elapsed)
             if fallback_wait > 0:
                 time.sleep(fallback_wait)
             if not self._running:
                 return
-        random_answers = self._build_random_answers(problem)
-        self._submit_answer(problemid, problemtype, random_answers, "random")
+        # For short answer, submit blank; for choice questions, submit random.
+        if problemtype == 5:
+            self._submit_answer(problemid, problemtype, " ", "blank")
+        else:
+            random_answers = self._build_random_answers(problem)
+            self._submit_answer(problemid, problemtype, random_answers, "random")
 
     def _answer_with_random(self, problem: dict, problemid: Any, problemtype: int, limit: int) -> None:
-        """Random answering thread: wait for answer_delay, then submit."""
         delay = random.uniform(
             self.course_config["answer_delay_min"],
             self.course_config["answer_delay_max"],
@@ -273,6 +275,19 @@ class Lesson:
             return
         answers = self._build_random_answers(problem)
         self._submit_answer(problemid, problemtype, answers, "random")
+
+    def _answer_with_blank(self, problemid: Any, problemtype: int, limit: int) -> None:
+        delay = random.uniform(
+            self.course_config["answer_delay_min"],
+            self.course_config["answer_delay_max"],
+        )
+        if limit > 0:
+            delay = min(delay, max(0, limit - 2))
+        if delay > 0:
+            time.sleep(delay)
+        if not self._running:
+            return
+        self._submit_answer(problemid, problemtype, " ", "blank")
 
     def _start_answer_for_problem(self, problemid: Any, limit: int) -> None:
         for problem in self.problems_ls:
@@ -288,6 +303,12 @@ class Lesson:
                     threading.Thread(
                         target=self._answer_with_ai,
                         args=(problem, problemid, problemtype, limit),
+                        daemon=True,
+                    ).start()
+                elif mode == "blank":
+                    threading.Thread(
+                        target=self._answer_with_blank,
+                        args=(problemid, problemtype, limit),
                         daemon=True,
                     ).start()
                 else:
@@ -332,12 +353,6 @@ class Lesson:
         }))
 
     def _on_message(self, wsapp: websocket.WebSocketApp, message: str) -> None:
-        try:
-            self._handle_message(wsapp, message)
-        except Exception:
-            logger.exception("Error handling websocket message")
-
-    def _handle_message(self, wsapp: websocket.WebSocketApp, message: str) -> None:
         data = json.loads(message)
         op = data.get("op", "")
 

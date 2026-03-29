@@ -1,7 +1,6 @@
 {
   "nav": {
     "brand": "Yuketang Helper",
-    "login": "Login",
     "dashboard": "Dashboard",
     "settings": "Settings"
   },
@@ -41,14 +40,12 @@
     "notif_call": "Roll Call",
     "notif_danmu": "Danmu",
     "random": "Random",
+    "blank": "Blank",
     "reserved": "In Progress",
     "disabled": "Disabled",
     "aiSettings": "AI Settings",
-    "aiProvider": "Provider",
-    "apiKey": "API Key",
     "apiKeyPlaceholder": "Enter your API key",
-    "keyName": "Name",
-    "keyNamePlaceholder": "e.g. Personal, Work",
+    "keyNamePlaceholder": "Customize your key name",
     "addKey": "Add Key",
     "delete": "Delete",
     "use": "Use",
@@ -90,8 +87,9 @@
     "not_found": "not found",
     "source_ai": "AI",
     "source_random": "random",
-    "answer": "answer",
-    "ai_failed": "AI answering failed, please answer manually! Random answer will be submitted in the last 5 seconds"
+    "source_blank": "blank",
+    "answer": "answer(s)",
+    "ai_failed": "AI answering failed, please answer manually! In the last 5 seconds, random answers will be submitted for single-choice and multiple-choice questions as a fallback, and empty answers will be submitted for short-answer questions as a fallback."
   },
   "common": {
     "yes": "Yes",

@@ -699,21 +699,6 @@ button:disabled {
   flex-shrink: 0;
 }
 
-.btn-sm {
-  padding: 3px 10px;
-  font-size: 12px;
-}
-
-.btn-secondary {
-  background: var(--color-bg);
-  color: var(--color-text);
-  border: 1px solid var(--color-border);
-}
-
-.btn-secondary:hover {
-  background: var(--color-border);
-}
-
 /* AI add key – horizontal form */
 .ai-add-form {
   display: flex;

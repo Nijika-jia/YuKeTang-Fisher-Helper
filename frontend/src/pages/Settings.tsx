@@ -30,7 +30,7 @@ interface AIKeyEntry {
 
 const PROVIDER_LABELS: Record<string, string> = {
   google: 'Google',
-  qwen: 'Qwen (ModelScope)',
+  qwen: 'ModelScope',
 }
 
 interface AISettings {
@@ -139,14 +139,14 @@ export default function Settings() {
   const [courses, setCourses] = useState<CourseState[]>([])
   const [loading, setLoading] = useState(true)
   const [ai, setAi] = useState<AISettings>({ keys: [], active_key: -1 })
-  const [newKey, setNewKey] = useState<AIKeyEntry>({ name: '', provider: 'google', key: '' })
+  const [newKey, setNewKey] = useState<AIKeyEntry>({ name: '', provider: 'qwen', key: '' })
   const [addingKey, setAddingKey] = useState(false)
   const [appliedAllFrom, setAppliedAllFrom] = useState<string | null>(null)
   const [defaults, setDefaults] = useState<CourseConfig | null>(null)
   const savedCoursesRef = useRef<Record<string, string>>({})
 
   const reloadAi = () =>
-    fetch('/api/ai/settings').then((r) => r.json()).then(setAi).catch(() => {})
+    fetch('/api/ai/settings').then((r) => r.json()).then(setAi).catch(() => { })
 
   useEffect(() => {
     Promise.all([
@@ -164,7 +164,7 @@ export default function Settings() {
         savedCoursesRef.current = snap
         setAi(aiSettings)
       })
-      .catch(() => {})
+      .catch(() => { })
       .finally(() => setLoading(false))
   }, [])
 
@@ -187,9 +187,9 @@ export default function Settings() {
         body: JSON.stringify(newKey),
       })
       if (!resp.ok) throw new Error('Add failed')
-      setNewKey({ name: '', provider: 'google', key: '' })
+      setNewKey({ name: '', provider: 'qwen', key: '' })
       await reloadAi()
-    } catch {}
+    } catch { }
     setAddingKey(false)
   }
 
@@ -313,20 +313,20 @@ export default function Settings() {
       prev.map((c) =>
         c.courseId === courseId
           ? {
-              ...c,
-              type1: defaults.type1,
-              type2: defaults.type2,
-              type3: defaults.type3,
-              type4: defaults.type4,
-              type5: defaults.type5,
-              answer_delay_min: defaults.answer_delay_min,
-              answer_delay_max: defaults.answer_delay_max,
-              auto_danmu: defaults.auto_danmu,
-              danmu_threshold: defaults.danmu_threshold,
-              notification: { ...defaults.notification },
-              voice_notification: { ...defaults.voice_notification },
-              saveStatus: 'idle',
-            }
+            ...c,
+            type1: defaults.type1,
+            type2: defaults.type2,
+            type3: defaults.type3,
+            type4: defaults.type4,
+            type5: defaults.type5,
+            answer_delay_min: defaults.answer_delay_min,
+            answer_delay_max: defaults.answer_delay_max,
+            auto_danmu: defaults.auto_danmu,
+            danmu_threshold: defaults.danmu_threshold,
+            notification: { ...defaults.notification },
+            voice_notification: { ...defaults.voice_notification },
+            saveStatus: 'idle',
+          }
           : c
       )
     )
@@ -402,7 +402,7 @@ export default function Settings() {
                 onChange={(e) => setNewKey({ ...newKey, provider: e.target.value })}
               >
                 <option value="google">Google</option>
-                <option value="qwen">Qwen (ModelScope)</option>
+                <option value="qwen">ModelScope</option>
               </select>
               <input
                 type="password"
@@ -472,6 +472,7 @@ export default function Settings() {
                       value={course.type5}
                       options={[
                         { value: 'ai', label: 'AI' },
+                        { value: 'blank', label: t('settings.blank') },
                         { value: 'off', label: t('settings.disabled') },
                       ]}
                       onChange={(v) => updateField(course.courseId, 'type5', v)}
@@ -590,10 +591,10 @@ export default function Settings() {
                   )}
                   <button
                     className={`btn ${course.saveStatus === 'saved'
-                        ? 'btn-success'
-                        : course.saveStatus === 'error'
-                          ? 'btn-danger'
-                          : 'btn-primary'
+                      ? 'btn-success'
+                      : course.saveStatus === 'error'
+                        ? 'btn-danger'
+                        : 'btn-primary'
                       }`}
                     onClick={() => handleSave(course)}
                     disabled={course.saveStatus === 'saving' || !isDirty(course)}

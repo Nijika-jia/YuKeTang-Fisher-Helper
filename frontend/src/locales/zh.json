@@ -1,7 +1,6 @@
 {
   "nav": {
     "brand": "雨课堂助手",
-    "login": "登录",
     "dashboard": "仪表盘",
     "settings": "设置"
   },
@@ -41,14 +40,12 @@
     "notif_call": "点名",
     "notif_danmu": "弹幕",
     "random": "随机",
+    "blank": "空答案",
     "reserved": "开发中",
     "disabled": "关闭",
     "aiSettings": "AI 设置",
-    "aiProvider": "服务商",
-    "apiKey": "API 密钥",
     "apiKeyPlaceholder": "请输入 API 密钥",
-    "keyName": "名称",
-    "keyNamePlaceholder": "例如：个人、工作",
+    "keyNamePlaceholder": "自定义密钥名称",
     "addKey": "添加密钥",
     "delete": "删除",
     "use": "使用",
@@ -90,8 +87,9 @@
     "not_found": "题目未找到",
     "source_ai": "AI",
     "source_random": "随机",
+    "source_blank": "空答案",
     "answer": "答案",
-    "ai_failed": "AI答题失败，请手动作答！将在最后5秒提交随机答案保底"
+    "ai_failed": "AI答题失败，请手动作答！剩余5秒时，单选题和多选题将提交随机答案保底，简答题将提交空答案保底。"
   },
   "common": {
     "yes": "是",
