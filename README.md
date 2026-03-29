@@ -1,3 +1,52 @@
+# 雨课堂助手 Web 版
+
+- 基于 Web 的雨课堂自动化工具。实时监控进行中的课程，自动处理签到、答题、弹幕和点名通知。
+基于 [RainClassroomAssitant](https://github.com/TrickyDeath/RainClassroomAssitant) 和 [THU-Yuketang-Helper](https://github.com/zhangchi2004/THU-Yuketang-Helper)
+
+## 功能
+
+- **自动签到** — 课程开始时自动签到
+- **自动答题** — 支持单选、多选、投票和简答题，可配置答题策略（随机或 AI）
+- **自动弹幕** — 自动发送弹幕消息
+- **点名提醒** — 点名时发送通知提醒
+- **分课程设置** — 对每门课程进行精细化的自动化控制
+- **双语界面** — 支持中英文切换
+- **实时面板** — 实时展示所有课程事件动态
+
+## 快速开始
+
+1. [下载源代码 ZIP](https://codeload.github.com/dvdsanyi/Yuketang-Helper-Web/zip/refs/heads/main) 并解压，或使用 Git Clone。
+1. 下载并安装 [Docker Desktop](https://www.docker.com/)。
+1. 打开 Docker Desktop。
+1. 在项目根目录下运行以下命令：
+
+   ```zsh
+   docker compose up -d --build
+   ```
+
+1. 在浏览器中打开 <http://localhost:8500> 即可使用。
+
+## 启动
+
+- 在 Docker Desktop 的 Containers 界面启动 container，然后在浏览器中打开 <http://localhost:8500> 即可使用。
+
+## 停止
+
+- 在 Docker Desktop 的 Containers 界面停止 container。
+
+## 获取 AI API密钥
+
+- **Google**: 登录 [Google AI Studio](https://aistudio.google.com/)，进入 [Get API Key page](https://aistudio.google.com/api-keys)，点击 **Create API Key**。
+
+- **ModelScope**: 登录 [ModelScope](https://modelscope.cn/)，前往[账号设置 → 访问控制](https://modelscope.cn/my/access/token)，点击 **新建访问令牌**。
+
+## 待办
+
+- [ ] 支持多种 LLM API
+- [ ] 支持填空题答题
+
+---
+
 # Yuketang Helper Web
 
 A web-based automation tool for Yuketang online learning platform. It monitors active lessons in real time and automatically handles sign-ins, quizzes, bullet chats, and roll call notifications.
@@ -15,75 +64,32 @@ Based on [RainClassroomAssitant](https://github.com/TrickyDeath/RainClassroomAss
 
 ## Quick Start
 
-### Prerequisites
+1. [Download source code ZIP](https://codeload.github.com/dvdsanyi/Yuketang-Helper-Web/zip/refs/heads/main) and extract, or use Git Clone.
+1. Download and install [Docker Desktop](https://www.docker.com/).
+1. Open Docker Desktop.
+1. Run the following command in the project root directory:
 
-- [Docker](https://www.docker.com/)
+   ```zsh
+   docker compose up -d --build
+   ```
 
-### Run
+1. Open <http://localhost:8500> in your browser to use the app.
 
-```bash
-docker compose up -d --build
-```
+## Run
 
-Open <http://localhost:8500> in your browser to use the app.
+- Start the container in the Containers tab of Docker Desktop, then open <http://localhost:8500> in your browser.
 
-### Stop
+## Stop
 
-To stop the app, stop the container via Docker.
+- Stop the container in the Containers tab of Docker Desktop.
 
-### Get AI API Key
+## Get AI API Key
 
-**Google** — Log in at [Google AI Studio](https://aistudio.google.com/), go to the [Get API Key page](https://aistudio.google.com/api-keys), and click **Create API Key**.
+- **Google**: Log in at [Google AI Studio](https://aistudio.google.com/), go to the [Get API Key page](https://aistudio.google.com/api-keys), and click **Create API Key**.
 
-**ModelScope** — Log in at [ModelScope](https://modelscope.cn/), then go to [Account Settings → Access Control](https://modelscope.cn/my/access/token), and click **Create Your Token**.
+- **ModelScope**: Log in at [ModelScope](https://modelscope.cn/), then go to [Account Settings → Access Control](https://modelscope.cn/my/access/token), and click **Create Your Token**.
 
 ## TODO
 
 - [ ] Support multiple LLM APIs
 - [ ] Support Fill-in-the-blank answering
-
----
-
-# 雨课堂助手 Web 版
-
-基于 Web 的雨课堂自动化工具。实时监控进行中的课程，自动处理签到、答题、弹幕和点名通知。
-基于 [RainClassroomAssitant](https://github.com/TrickyDeath/RainClassroomAssitant) 和 [THU-Yuketang-Helper](https://github.com/zhangchi2004/THU-Yuketang-Helper)
-
-## 功能
-
-- **自动签到** — 课程开始时自动签到
-- **自动答题** — 支持单选、多选、投票和简答题，可配置答题策略（随机或 AI）
-- **自动弹幕** — 自动发送弹幕消息
-- **点名提醒** — 点名时发送通知提醒
-- **分课程设置** — 对每门课程进行精细化的自动化控制
-- **双语界面** — 支持中英文切换
-- **实时面板** — 实时展示所有课程事件动态
-
-## 快速开始
-
-### 环境要求
-
-- [Docker](https://www.docker.com/)
-
-### 启动
-
-```bash
-docker compose up -d --build
-```
-
-在浏览器中打开 <http://localhost:8500> 即可使用。
-
-### 停止
-
-通过 Docker 停止容器。
-
-### 获取 AI API Key
-
-**Google** — 登录 [Google AI Studio](https://aistudio.google.com/)，进入[Get API Key page](https://aistudio.google.com/api-keys)，点击 **Create API Key** 即可生成。
-
-**ModelScope** — 登录 [ModelScope](https://modelscope.cn/)，前往[账号设置 → 访问控制](https://modelscope.cn/my/access/token)，点击 **新建访问令牌** 获取 API Key。
-
-## 待办
-
-- [ ] 支持多种 LLM API
-- [ ] 支持填空题答题
