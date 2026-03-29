@@ -8,7 +8,7 @@ from typing import Any, Callable, Dict, List, Optional
 import requests
 import websocket
 
-from ai_provider import AIProvider, create_provider
+from ai_provider import create_provider
 from config import api_get, api_post, api_url, get_active_ai_key, get_config, make_headers
 
 logger = logging.getLogger(__name__)
@@ -63,7 +63,6 @@ class Lesson:
             header=self.headers,
             on_open=self._on_open,
             on_message=self._on_message,
-
         )
         self.wsapp.run_forever(ping_interval=30, ping_timeout=10)
         self._running = False

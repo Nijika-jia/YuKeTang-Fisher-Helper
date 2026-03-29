@@ -4,12 +4,20 @@ import sys
 from pathlib import Path
 from typing import Any
 
-# Bypass system proxy for all outbound requests from the backend.
+# Bypass system proxy for Yuketang and ModelScope domains.
 # On Windows the system proxy (e.g. socks4 from Clash/V2Ray) is read from the
-# registry and can cause "Unknown scheme" errors in requests/httpx.  Yuketang
-# API servers are domestic and don't need a proxy.  AI provider SDKs manage
-# their own HTTP clients and are not affected by this setting.
-os.environ.setdefault("NO_PROXY", "*")
+# registry and can cause "Unknown scheme" errors in requests/httpx.  These
+# domains are domestic and don't need a proxy.  Google AI requests are NOT
+# included so they can still go through the user's proxy.
+_NO_PROXY_DOMAINS = ",".join([
+    "pro.yuketang.cn",
+    "www.yuketang.cn",
+    "changjiang.yuketang.cn",
+    "huanghe.yuketang.cn",
+    "api-inference.modelscope.cn",
+])
+_existing = os.environ.get("NO_PROXY", "")
+os.environ["NO_PROXY"] = f"{_existing},{_NO_PROXY_DOMAINS}" if _existing else _NO_PROXY_DOMAINS
 
 import requests
 

@@ -80,6 +80,9 @@ function buildSpeechText(event: ActivityEvent, isChinese: boolean): string {
     case 'signin':
       return isChinese ? `${lesson}已签到` : `${lesson} checked in`
     case 'problem':
+      if (event.status === 'ai_failed') {
+        return isChinese ? `${lesson}AI答题失败，请手动作答` : `${lesson} AI failed, please answer manually`
+      }
       return isChinese ? `${lesson}已答题` : `${lesson} answered`
     case 'call':
       return isChinese ? '您被点名' : 'You were called on'
@@ -97,7 +100,7 @@ function eventBadgeClass(event: ActivityEvent): string {
   if (event.type === 'network')
     return event.status === 'error' ? 'badge badge-red' : 'badge badge-green'
   if (event.status === 'success') return 'badge badge-green'
-  if (event.status === 'error') return 'badge badge-red'
+  if (event.status === 'error' || event.status === 'ai_failed') return 'badge badge-red'
   return 'badge badge-blue'
 }
 
