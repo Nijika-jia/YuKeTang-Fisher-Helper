@@ -89,7 +89,8 @@
     "no_answer": "no answer",
     "not_found": "not found",
     "source_ai": "AI",
-    "source_random": "random"
+    "source_random": "random",
+    "answer": "answer"
   },
   "common": {
     "yes": "Yes",

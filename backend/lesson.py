@@ -206,6 +206,26 @@ class Lesson:
             options = [opt["key"] for opt in problem["options"]]
             return provider.answer_choice(cover_url, options, problemtype)
 
+    _AI_FALLBACK_RESERVE = 5  # seconds reserved for fallback to random
+
+    def _build_ai_answers_with_timeout(self, problem: dict, timeout: float) -> tuple:
+        """Try AI answering with a timeout. Returns (answers, source)."""
+        result_holder = [None]
+
+        def _run():
+            try:
+                result_holder[0] = self._build_ai_answers(problem)
+            except Exception:
+                logger.exception("AI answering failed")
+
+        t = threading.Thread(target=_run, daemon=True)
+        t.start()
+        t.join(timeout=timeout)
+        if result_holder[0] is not None:
+            return result_holder[0], "ai"
+        logger.warning("AI timeout/failure for problem %s, falling back to random", problem["problemId"])
+        return self._build_random_answers(problem), "random"
+
     def _start_answer_for_problem(self, problemid: Any, limit: int) -> None:
         for problem in self.problems_ls:
             if problem["problemId"] == problemid:
@@ -217,8 +237,13 @@ class Lesson:
                     return
                 if mode == "ai":
                     if self._get_ai_provider():
-                        answers = self._build_ai_answers(problem)
-                        actual_source = "ai"
+                        if limit > 0:
+                            delay_max = self.course_config.get("answer_delay_max", 10)
+                            ai_timeout = max(1, limit - self._AI_FALLBACK_RESERVE - delay_max)
+                            answers, actual_source = self._build_ai_answers_with_timeout(problem, ai_timeout)
+                        else:
+                            answers = self._build_ai_answers(problem)
+                            actual_source = "ai"
                     else:
                         answers = self._build_random_answers(problem)
                         actual_source = "random"

@@ -89,7 +89,8 @@
     "no_answer": "未找到答案",
     "not_found": "题目未找到",
     "source_ai": "AI",
-    "source_random": "随机"
+    "source_random": "随机",
+    "answer": "答案"
   },
   "common": {
     "yes": "是",

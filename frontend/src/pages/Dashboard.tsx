@@ -54,7 +54,7 @@ function formatEventLabel(event: ActivityEvent, t: (key: string) => string): str
             : String(event.answers)
         : ''
       const sourceText = event.source ? ` [${t(`events.source_${event.source}`)}]` : ''
-      return `${lesson}${problemTypeName}: ${statusText}${answerText ? `, answer: ${answerText}` : ''}${sourceText}`
+      return `${lesson}${problemTypeName}: ${statusText}${answerText ? `, ${t('events.answer')}: ${answerText}` : ''}${sourceText}`
     }
     case 'danmu':
       return `${lesson}${typeName}: "${event.content || ''}" — ${t(`events.${event.status || 'success'}`)}`

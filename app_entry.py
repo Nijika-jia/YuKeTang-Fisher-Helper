@@ -25,4 +25,4 @@ PORT = 8500
 
 if __name__ == "__main__":
     webbrowser.open(f"http://localhost:{PORT}")
-    uvicorn.run(app, host="0.0.0.0", port=PORT, log_level="info")
+    uvicorn.run(app, host="0.0.0.0", port=PORT, log_level="info", use_colors=False)
