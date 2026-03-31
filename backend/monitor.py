@@ -1,4 +1,5 @@
 import asyncio
+import logging
 import threading
 import time
 from typing import Dict, Optional
@@ -6,6 +7,8 @@ from typing import Dict, Optional
 import event_log
 from config import get_course_config, update_course_config, make_headers, api_get
 from lesson import Lesson
+
+logger = logging.getLogger(__name__)
 
 POLL_INTERVAL = 30
 
@@ -53,9 +56,12 @@ class Monitor:
 
     def _run(self) -> None:
         while self._running:
-            headers = make_headers(self.sessionid)
-            lesson_list = api_get(URL_ON_LESSON, headers).json()["data"]["onLessonClassrooms"]
-            self._sync_lessons(lesson_list)
+            try:
+                headers = make_headers(self.sessionid)
+                lesson_list = api_get(URL_ON_LESSON, headers).json()["data"]["onLessonClassrooms"]
+                self._sync_lessons(lesson_list)
+            except Exception as e:
+                logger.warning("Monitor poll failed: %s", e)
             for _ in range(POLL_INTERVAL):
                 if not self._running:
                     return
