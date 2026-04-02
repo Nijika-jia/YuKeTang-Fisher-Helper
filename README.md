@@ -17,14 +17,14 @@
 
 ## 快速开始
 
-### 方式一：下载可执行文件（推荐）
+### 方式一：下载可执行文件（本地机器推荐）
 
 1. 前往 [Releases 页面](https://github.com/dvdsanyi/Yuketang-Helper-Web/releases)，下载对应平台的可执行文件
 2. 运行可执行文件，浏览器会自动打开 <http://localhost:8500>
 
-> macOS 用户需先运行 `chmod +x YuketangHelper-macOS`，如遇安全提示请前往 **系统设置 → 隐私与安全性** 点击"仍要打开"
+> macOS/linux 用户需先运行 `chmod +x YuketangHelper-<OS>-<VERSION>`（自行补全文件名）; macOS 用户如遇安全提示请前往 **系统设置 → 隐私与安全性** 点击"仍要打开"
 
-### 方式二：Python 启动
+### 方式二：源代码 Python 启动（开发者推荐）
 
 1. [下载源代码 ZIP](https://codeload.github.com/dvdsanyi/Yuketang-Helper-Web/zip/refs/heads/main) 并解压，或使用 Git Clone
 1. 安装 [Python 3](https://www.python.org/) 和 [Node.js](https://nodejs.org/)
@@ -36,15 +36,15 @@
 
 1. 在浏览器中打开 <http://localhost:8500> 即可使用
 
-### 方式三：Docker 部署
+### 方式三：Docker 部署（服务器推荐）
 
-1. [下载源代码 ZIP](https://codeload.github.com/dvdsanyi/Yuketang-Helper-Web/zip/refs/heads/main) 并解压，或使用 Git Clone
-1. 下载并安装 [Docker Desktop](https://www.docker.com/)
-1. 打开 Docker Desktop
-1. 在项目根目录下运行以下命令：
+1. 下载并安装 Docker
+1. 打开 Docker
+1. 运行：
 
    ```zsh
-   docker compose up -d --build
+   docker pull dvdyyz/yuketang-helper:latest && 
+   docker run -d --name yuketang-helper --restart unless-stopped -p 8500:8500 dvdyyz/yuketang-helper:latest
    ```
 
 1. 在浏览器中打开 <http://localhost:8500> 即可使用
@@ -53,13 +53,13 @@
 
 - **可执行文件**：直接运行可执行文件即可
 - **Python**：在项目根目录下运行 `python start.py`，然后在浏览器中打开 <http://localhost:8500>
-- **Docker**：在 Docker Desktop 的 Containers 界面启动 container，然后在浏览器中打开 <http://localhost:8500>
+- **Docker**：打开 Docker，运行 `docker run -d --name yuketang-helper --restart unless-stopped -p 8500:8500 dvdyyz/yuketang-helper:latest`，然后在浏览器中打开 <http://localhost:8500>
 
 ## 停止
 
 - **可执行文件**：关闭终端窗口
 - **Python**：运行 `python stop.py`
-- **Docker**：在 Docker Desktop 的 Containers 界面停止 container
+- **Docker**：运行 `docker stop yuketang-helper`
 
 ## 获取 AI API密钥（免费）
 
@@ -72,6 +72,7 @@
 - [ ] 支持多种 LLM API
 - [ ] 支持填空题答题
 - [ ] 自动预习
+- [ ] 自动抢红包
 
 ---
 
@@ -94,14 +95,14 @@ Based on [RainClassroomAssitant](https://github.com/TrickyDeath/RainClassroomAss
 
 ## Quick Start
 
-### Option 1: Download Executable (Recommended)
+### Option 1: Download Executable (Recommended for Local)
 
 1. Go to the [Releases page](https://github.com/dvdsanyi/Yuketang-Helper-Web/releases) and download the executable for your platform
 2. Run the executable — your browser will automatically open <http://localhost:8500>
 
-> macOS users: run `chmod +x YuketangHelper-macOS` first. If you see a security warning, go to **System Settings → Privacy & Security** and click "Open Anyway"
+> macOS/Linux users: run `chmod +x YuketangHelper-<OS>-<VERSION>` first (replace with actual filename); macOS users: if you see a security warning, go to **System Settings → Privacy & Security** and click "Open Anyway"
 
-### Option 2: Python
+### Option 2: Python from Source (Recommended for Developers)
 
 1. [Download source code ZIP](https://codeload.github.com/dvdsanyi/Yuketang-Helper-Web/zip/refs/heads/main) and extract, or use Git Clone
 1. Install [Python 3](https://www.python.org/) and [Node.js](https://nodejs.org/)
@@ -113,15 +114,15 @@ Based on [RainClassroomAssitant](https://github.com/TrickyDeath/RainClassroomAss
 
 1. Open <http://localhost:8500> in your browser to use the app
 
-### Option 3: Docker Deployment
+### Option 3: Docker Deployment (Recommended for Servers)
 
-1. [Download source code ZIP](https://codeload.github.com/dvdsanyi/Yuketang-Helper-Web/zip/refs/heads/main) and extract, or use Git Clone
-1. Download and install [Docker Desktop](https://www.docker.com/)
-1. Open Docker Desktop
-1. Run the following command in the project root directory:
+1. Download and install Docker
+1. Open Docker
+1. Run:
 
    ```zsh
-   docker compose up -d --build
+   docker pull dvdyyz/yuketang-helper:latest && 
+   docker run -d --name yuketang-helper --restart unless-stopped -p 8500:8500 dvdyyz/yuketang-helper:latest
    ```
 
 1. Open <http://localhost:8500> in your browser to use the app
@@ -130,13 +131,13 @@ Based on [RainClassroomAssitant](https://github.com/TrickyDeath/RainClassroomAss
 
 - **Executable**: Simply run the executable file
 - **Python**: Run `python start.py` in the project root directory, then open <http://localhost:8500> in your browser
-- **Docker**: Start the container in the Containers tab of Docker Desktop, then open <http://localhost:8500> in your browser
+- **Docker**: Open Docker, run `docker run -d --name yuketang-helper --restart unless-stopped -p 8500:8500 dvdyyz/yuketang-helper:latest`, then open <http://localhost:8500> in your browser
 
 ## Stop
 
 - **Executable**: Close the terminal window
 - **Python**: Run `python stop.py`
-- **Docker**: Stop the container in the Containers tab of Docker Desktop
+- **Docker**: Run `docker stop yuketang-helper`
 
 ## Get AI API Key (Free)
 
@@ -149,3 +150,4 @@ Based on [RainClassroomAssitant](https://github.com/TrickyDeath/RainClassroomAss
 - [ ] Support multiple LLM APIs
 - [ ] Support Fill-in-the-blank answering
 - [ ] Auto preview
+- [ ] Auto red packet grabbing
