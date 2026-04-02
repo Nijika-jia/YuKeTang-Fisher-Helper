@@ -36,6 +36,7 @@ const PROVIDER_LABELS: Record<string, string> = {
 interface AISettings {
   keys: AIKeyEntry[]
   active_key: number
+  fallback_keys: boolean
 }
 
 type CoursesMap = Record<string, CourseConfig>
@@ -138,7 +139,7 @@ export default function Settings() {
   const { t } = useTranslation()
   const [courses, setCourses] = useState<CourseState[]>([])
   const [loading, setLoading] = useState(true)
-  const [ai, setAi] = useState<AISettings>({ keys: [], active_key: -1 })
+  const [ai, setAi] = useState<AISettings>({ keys: [], active_key: -1, fallback_keys: true })
   const [newKey, setNewKey] = useState<AIKeyEntry>({ name: '', provider: 'qwen', key: '' })
   const [addingKey, setAddingKey] = useState(false)
   const [appliedAllFrom, setAppliedAllFrom] = useState<string | null>(null)
@@ -203,6 +204,15 @@ export default function Settings() {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ active_key: index }),
+    })
+    await reloadAi()
+  }
+
+  const handleToggleFallback = async (enabled: boolean) => {
+    await fetch('/api/ai/fallback', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ fallback_keys: enabled }),
     })
     await reloadAi()
   }
@@ -387,6 +397,29 @@ export default function Settings() {
             </div>
           )}
 
+          {ai.keys.length > 1 && (
+            <div className="form-row" style={{ padding: '0 16px', marginBottom: 8 }}>
+              <label className="form-label">
+                {t('settings.fallbackKeys')}
+                <span className="tooltip-trigger" data-tooltip={t('settings.fallbackKeysDesc')}>?</span>
+              </label>
+              <div className="toggle-group">
+                <button
+                  className={`toggle-option ${ai.fallback_keys ? 'selected' : ''}`}
+                  onClick={() => handleToggleFallback(true)}
+                >
+                  {t('common.on')}
+                </button>
+                <button
+                  className={`toggle-option ${!ai.fallback_keys ? 'selected' : ''}`}
+                  onClick={() => handleToggleFallback(false)}
+                >
+                  {t('common.off')}
+                </button>
+              </div>
+            </div>
+          )}
+
           <div className="ai-add-form">
             <div className="ai-add-fields">
               <input
@@ -483,7 +516,10 @@ export default function Settings() {
                   <div className="settings-group">
                     <span className="settings-group-label">{t('settings.timing')}</span>
                     <div className="form-row">
-                      <label className="form-label">{t('settings.answerDelay')}</label>
+                      <label className="form-label">
+                        {t('settings.answerDelay')}
+                        <span className="tooltip-trigger" data-tooltip={t('settings.answerDelayTooltip')}>?</span>
+                      </label>
                       <div className="input-with-unit">
                         <input
                           type="number"

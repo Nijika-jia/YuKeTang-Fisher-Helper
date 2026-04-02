@@ -33,7 +33,7 @@ def start():
     )
     print("Yuketang Helper is running")
     print("  Frontend: http://localhost:3000")
-    print("  Backend:  http://localhost:8500")
+    print("  Backend:  http://localhost:8500/docs")
 
 
 if __name__ == "__main__":

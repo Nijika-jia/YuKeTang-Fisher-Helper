@@ -1,8 +1,23 @@
 import asyncio
 import json
+import logging
 import sys
 import threading
 import time
+
+_fmt = logging.Formatter(
+    fmt="%(asctime)s %(levelname)s %(name)s: %(message)s",
+    datefmt="%Y-%m-%dT%H:%M:%SZ",
+)
+_fmt.converter = time.gmtime
+
+logging.basicConfig(level=logging.INFO)
+logging.root.handlers[0].setFormatter(_fmt)
+
+for _name in ("uvicorn", "uvicorn.access", "uvicorn.error"):
+    _logger = logging.getLogger(_name)
+    for _h in _logger.handlers:
+        _h.setFormatter(_fmt)
 from contextlib import asynccontextmanager
 from pathlib import Path
 from typing import Optional
@@ -423,7 +438,7 @@ async def get_ai_settings():
         raw = entry["key"]
         masked = raw[:4] + "****" + raw[-4:] if len(raw) > 8 else "****"
         masked_keys.append({**entry, "key": masked})
-    return {"keys": masked_keys, "active_key": cfg["active_key"]}
+    return {"keys": masked_keys, "active_key": cfg["active_key"], "fallback_keys": cfg.get("fallback_keys", True)}
 
 
 @app.post("/api/ai/keys")
@@ -457,6 +472,12 @@ async def delete_ai_key(index: int):
 @app.put("/api/ai/active")
 async def set_active_ai_key(body: AIActiveKey):
     update_ai_config({"active_key": body.active_key})
+    return {"ok": True}
+
+
+@app.put("/api/ai/fallback")
+async def set_ai_fallback(body: dict):
+    update_ai_config({"fallback_keys": bool(body.get("fallback_keys", True))})
     return {"ok": True}
 
 

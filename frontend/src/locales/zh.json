@@ -50,7 +50,10 @@
     "delete": "删除",
     "use": "使用",
     "inUse": "使用中",
+    "fallbackKeys": "API 密钥回退",
+    "fallbackKeysDesc": "当使用中的密钥调用失败时，依次尝试其他密钥",
     "answerDelay": "答题延迟",
+    "answerDelayTooltip": "收到题目后立即生成答案，等待延迟时间后再提交。若有答题时限，剩余5秒时将提交保底答案（选择题随机，简答题空白）",
     "seconds": "秒",
     "to": "至",
     "danmuThreshold": "重复次数触发弹幕",
@@ -89,7 +92,7 @@
     "source_random": "随机",
     "source_blank": "空答案",
     "answer": "答案",
-    "ai_failed": "AI答题失败，请手动作答！剩余5秒时，单选题和多选题将提交随机答案保底，简答题将提交空答案保底。"
+    "ai_failed": "AI答题失败，请手动作答！剩余5秒时，单选题和多选题将提交随机答案保底，简答题将提交空答案保底"
   },
   "common": {
     "yes": "是",

@@ -64,6 +64,7 @@ DEFAULT_COURSE_CONFIG: dict = {
 DEFAULT_AI_CONFIG: dict = {
     "keys": [],
     "active_key": -1,
+    "fallback_keys": True,
 }
 
 DOMAIN_OPTIONS = [
@@ -125,6 +126,22 @@ def get_active_ai_key() -> tuple:
         return ("", "")
     entry = keys[idx]
     return (entry["provider"], entry["key"])
+
+
+def get_all_ai_keys() -> list:
+    """Return all AI key entries as a list of (provider, key) tuples, active key first."""
+    ai = get_ai_config()
+    keys = ai["keys"]
+    active = ai["active_key"]
+    if not keys:
+        return []
+    ordered = []
+    if 0 <= active < len(keys):
+        ordered.append((keys[active]["provider"], keys[active]["key"]))
+    for i, entry in enumerate(keys):
+        if i != active:
+            ordered.append((entry["provider"], entry["key"]))
+    return ordered
 
 
 def update_ai_config(data: dict) -> None:
