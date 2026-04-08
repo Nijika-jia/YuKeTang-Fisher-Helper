@@ -238,14 +238,23 @@ class Lesson:
         else:
             return self._build_random_answers(problem), "random"
 
+    def _compute_delay(self, start_time: float, limit: int) -> float:
+        """Compute how long to wait before submitting an answer."""
+        if self.course_config.get("answer_last5s", False) and limit > 0:
+            # Submit in the last 5 seconds: wait until (limit - random(1,5)) seconds after start
+            delay = max(0, limit - random.uniform(1, min(5, limit)))
+        else:
+            delay = random.uniform(
+                self.course_config["answer_delay_min"],
+                self.course_config["answer_delay_max"],
+            )
+            if limit > 0:
+                delay = min(delay, max(0, limit - 2))
+        return delay
+
     def _wait_for_delay(self, start_time: float, limit: int) -> bool:
         """Wait for answer_delay since start_time. Returns False if lesson stopped."""
-        delay = random.uniform(
-            self.course_config["answer_delay_min"],
-            self.course_config["answer_delay_max"],
-        )
-        if limit > 0:
-            delay = min(delay, max(0, limit - 2))
+        delay = self._compute_delay(start_time, limit)
         remaining = delay - (time.time() - start_time)
         if remaining > 0:
             time.sleep(remaining)
@@ -273,11 +282,8 @@ class Lesson:
             threading.Thread(target=_call_ai, daemon=True).start()
 
             # Wait for answer_delay first.
-            delay = random.uniform(
-                self.course_config["answer_delay_min"],
-                self.course_config["answer_delay_max"],
-            )
-            if limit > 0:
+            delay = self._compute_delay(start_time, limit)
+            if not self.course_config.get("answer_last5s", False) and limit > 0:
                 delay = min(delay, max(0, limit - self._FALLBACK_RESERVE))
             remaining_delay = delay - (time.time() - start_time)
             if remaining_delay > 0:
@@ -384,6 +390,7 @@ class Lesson:
     def _on_message(self, wsapp: websocket.WebSocketApp, message: str) -> None:
         data = json.loads(message)
         op = data.get("op", "")
+        logger.info("[WS %s] op=%s", self.lessonname, op)
 
         if op == "hello":
             timeline = data.get("timeline", [])

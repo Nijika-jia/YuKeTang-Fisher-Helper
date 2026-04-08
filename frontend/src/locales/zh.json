@@ -54,6 +54,8 @@
     "fallbackKeysDesc": "当使用中的密钥调用失败时，依次尝试其他密钥",
     "answerDelay": "答题延迟",
     "answerDelayTooltip": "收到题目后立即生成答案，等待延迟时间后再提交。若有答题时限，剩余5秒时将提交保底答案（选择题随机，简答题空白）",
+    "answerLast5s": "最后5秒作答",
+    "answerLast5sTooltip": "开启后，答案将在截止前最后5秒内提交，而不使用答题延迟。仅对有时间限制的题目生效。",
     "seconds": "秒",
     "to": "至",
     "danmuThreshold": "重复次数触发弹幕",

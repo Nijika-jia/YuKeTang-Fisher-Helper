@@ -11,6 +11,7 @@ interface CourseConfig {
   type5: string
   answer_delay_min: number
   answer_delay_max: number
+  answer_last5s: boolean
   auto_danmu: boolean
   danmu_threshold: number
   notification: NotificationSub
@@ -54,6 +55,7 @@ function buildCourseStates(allCourses: CourseItem[], settings: CoursesMap, defau
       type5: cfg.type5 ?? defaults.type5,
       answer_delay_min: cfg.answer_delay_min ?? defaults.answer_delay_min,
       answer_delay_max: cfg.answer_delay_max ?? defaults.answer_delay_max,
+      answer_last5s: cfg.answer_last5s ?? defaults.answer_last5s,
       auto_danmu: cfg.auto_danmu ?? defaults.auto_danmu,
       danmu_threshold: cfg.danmu_threshold ?? defaults.danmu_threshold,
       notification: { ...defaults.notification, ...cfg.notification },
@@ -248,6 +250,7 @@ export default function Settings() {
           type5: course.type5,
           answer_delay_min: course.answer_delay_min,
           answer_delay_max: course.answer_delay_max,
+          answer_last5s: course.answer_last5s,
           auto_danmu: course.auto_danmu,
           danmu_threshold: course.danmu_threshold,
           notification: course.notification,
@@ -286,6 +289,7 @@ export default function Settings() {
       type5: source.type5,
       answer_delay_min: source.answer_delay_min,
       answer_delay_max: source.answer_delay_max,
+      answer_last5s: source.answer_last5s,
       auto_danmu: source.auto_danmu,
       danmu_threshold: source.danmu_threshold,
       notification: source.notification,
@@ -331,6 +335,7 @@ export default function Settings() {
             type5: defaults.type5,
             answer_delay_min: defaults.answer_delay_min,
             answer_delay_max: defaults.answer_delay_max,
+            answer_last5s: defaults.answer_last5s,
             auto_danmu: defaults.auto_danmu,
             danmu_threshold: defaults.danmu_threshold,
             notification: { ...defaults.notification },
@@ -517,39 +522,61 @@ export default function Settings() {
                     <span className="settings-group-label">{t('settings.timing')}</span>
                     <div className="form-row">
                       <label className="form-label">
-                        {t('settings.answerDelay')}
-                        <span className="tooltip-trigger" data-tooltip={t('settings.answerDelayTooltip')}>?</span>
+                        {t('settings.answerLast5s')}
+                        <span className="tooltip-trigger" data-tooltip={t('settings.answerLast5sTooltip')}>?</span>
                       </label>
-                      <div className="input-with-unit">
-                        <input
-                          type="number"
-                          className="form-input-number"
-                          min={1}
-                          max={course.answer_delay_max - 1}
-                          value={course.answer_delay_min}
-                          onChange={(e) => {
-                            const val = Math.max(1, parseInt(e.target.value) || 1)
-                            updateField(course.courseId, 'answer_delay_min', val)
-                            if (val >= course.answer_delay_max) {
-                              updateField(course.courseId, 'answer_delay_max', val + 1)
-                            }
-                          }}
-                        />
-                        <span className="input-unit">{t('settings.to')}</span>
-                        <input
-                          type="number"
-                          className="form-input-number"
-                          min={course.answer_delay_min + 1}
-                          max={300}
-                          value={course.answer_delay_max}
-                          onChange={(e) => {
-                            const val = Math.max(course.answer_delay_min + 1, parseInt(e.target.value) || course.answer_delay_min + 1)
-                            updateField(course.courseId, 'answer_delay_max', val)
-                          }}
-                        />
-                        <span className="input-unit">{t('settings.seconds')}</span>
+                      <div className="toggle-group">
+                        <button
+                          className={`toggle-option ${course.answer_last5s ? 'selected' : ''}`}
+                          onClick={() => updateField(course.courseId, 'answer_last5s', true)}
+                        >
+                          {t('common.on')}
+                        </button>
+                        <button
+                          className={`toggle-option ${!course.answer_last5s ? 'selected' : ''}`}
+                          onClick={() => updateField(course.courseId, 'answer_last5s', false)}
+                        >
+                          {t('common.off')}
+                        </button>
                       </div>
                     </div>
+                    {!course.answer_last5s && (
+                      <div className="form-row">
+                        <label className="form-label">
+                          {t('settings.answerDelay')}
+                          <span className="tooltip-trigger" data-tooltip={t('settings.answerDelayTooltip')}>?</span>
+                        </label>
+                        <div className="input-with-unit">
+                          <input
+                            type="number"
+                            className="form-input-number"
+                            min={1}
+                            max={course.answer_delay_max - 1}
+                            value={course.answer_delay_min}
+                            onChange={(e) => {
+                              const val = Math.max(1, parseInt(e.target.value) || 1)
+                              updateField(course.courseId, 'answer_delay_min', val)
+                              if (val >= course.answer_delay_max) {
+                                updateField(course.courseId, 'answer_delay_max', val + 1)
+                              }
+                            }}
+                          />
+                          <span className="input-unit">{t('settings.to')}</span>
+                          <input
+                            type="number"
+                            className="form-input-number"
+                            min={course.answer_delay_min + 1}
+                            max={300}
+                            value={course.answer_delay_max}
+                            onChange={(e) => {
+                              const val = Math.max(course.answer_delay_min + 1, parseInt(e.target.value) || course.answer_delay_min + 1)
+                              updateField(course.courseId, 'answer_delay_max', val)
+                            }}
+                          />
+                          <span className="input-unit">{t('settings.seconds')}</span>
+                        </div>
+                      </div>
+                    )}
                   </div>
 
                   {/* Danmu */}

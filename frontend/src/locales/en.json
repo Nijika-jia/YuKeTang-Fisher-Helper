@@ -54,6 +54,8 @@
     "fallbackKeysDesc": "When the active key fails, try other keys in order",
     "answerDelay": "Answer Delay",
     "answerDelayTooltip": "Answers are generated immediately when a problem is received, then submitted after the delay. If there is a time limit, a fallback answer will be submitted with 5 seconds remaining (random for choice, blank for short answer)",
+    "answerLast5s": "Answer in Last 5s",
+    "answerLast5sTooltip": "When enabled, answers will be submitted in the last 5 seconds before the deadline instead of using the answer delay. Only applies to timed questions.",
     "seconds": "s",
     "to": "to",
     "danmuThreshold": "Send when repeated",

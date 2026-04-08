@@ -43,10 +43,11 @@ DEFAULT_COURSE_CONFIG: dict = {
     "type5": "ai",
     "answer_delay_min": 1,
     "answer_delay_max": 2,
+    "answer_last5s": True,
     "auto_danmu": True,
     "danmu_threshold": 3,
     "notification": {
-        "enabled": True,
+        "enabled": False,
         "signin": True,
         "problem": True,
         "call": True,

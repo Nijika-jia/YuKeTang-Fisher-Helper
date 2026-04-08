@@ -59,6 +59,7 @@ class Monitor:
             try:
                 headers = make_headers(self.sessionid)
                 lesson_list = api_get(URL_ON_LESSON, headers).json()["data"]["onLessonClassrooms"]
+                logger.info("Monitor poll: %d active lesson(s)", len(lesson_list))
                 self._sync_lessons(lesson_list)
             except Exception as e:
                 logger.warning("Monitor poll failed: %s", e)
