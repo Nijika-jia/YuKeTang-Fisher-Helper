@@ -69,8 +69,8 @@ DEFAULT_AI_CONFIG: dict = {
 }
 
 DOMAIN_OPTIONS = [
-    {"key": "pro.yuketang.cn", "label": "Hetang Yuketang", "label_zh": "荷塘雨课堂"},
     {"key": "www.yuketang.cn", "label": "Yuketang", "label_zh": "雨课堂"},
+    {"key": "pro.yuketang.cn", "label": "Hetang Yuketang", "label_zh": "荷塘雨课堂"},
     {"key": "changjiang.yuketang.cn", "label": "Changjiang Yuketang", "label_zh": "长江雨课堂"},
     {"key": "huanghe.yuketang.cn", "label": "Huanghe Yuketang", "label_zh": "黄河雨课堂"},
 ]
