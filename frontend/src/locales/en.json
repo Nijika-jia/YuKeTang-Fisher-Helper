@@ -10,8 +10,17 @@
     "success": "Login successful! Redirecting...",
     "refresh": "Refresh QR Code",
     "waiting": "Waiting for QR code...",
-    "note": "Note: Scanning only grants access to your Yuketang session for monitoring. All user data, session information, and API keys are stored locally on your device only.",
-    "server": "Server"
+    "note": "Note: Login only grants access to your Yuketang session for monitoring. All user data, session information, and API keys are stored locally on your device only.",
+    "server": "Server",
+    "methodQR": "QR Code",
+    "methodPassword": "Password",
+    "pwTitle": "Sign in with Password",
+    "phonePlaceholder": "Phone number",
+    "passwordPlaceholder": "Password",
+    "pwLogin": "Sign in",
+    "pwLoggingIn": "Signing in...",
+    "pwFillAll": "Please enter phone number and password",
+    "pwFailed": "Login failed"
   },
   "dashboard": {
     "title": "Dashboard",

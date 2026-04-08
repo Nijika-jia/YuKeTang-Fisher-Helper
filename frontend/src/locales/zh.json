@@ -10,8 +10,17 @@
     "success": "登录成功！正在跳转...",
     "refresh": "刷新二维码",
     "waiting": "等待二维码...",
-    "note": "注：扫码仅用于获取您的雨课堂会话以便监听课程信息。所有用户数据、Session 与 API 密钥均仅储存在本地设备上，不会上传至任何服务器。",
-    "server": "服务器"
+    "note": "注：登录仅用于获取您的雨课堂 Session 以便监听课程信息。所有用户数据、Session 与 API 密钥均仅储存在本地设备上，不会上传至任何服务器。",
+    "server": "服务器",
+    "methodQR": "扫码登录",
+    "methodPassword": "密码登录",
+    "pwTitle": "密码登录",
+    "phonePlaceholder": "手机号",
+    "passwordPlaceholder": "密码",
+    "pwLogin": "登录",
+    "pwLoggingIn": "登录中...",
+    "pwFillAll": "请输入手机号和密码",
+    "pwFailed": "登录失败"
   },
   "dashboard": {
     "title": "仪表盘",
