@@ -7,4 +7,4 @@ pydantic>=2.0.0
 google-genai>=1.0.0
 openai>=1.0.0
 certifi>=2024.0.0
-rsa>=4.9
+pycryptodome>=3.18.0

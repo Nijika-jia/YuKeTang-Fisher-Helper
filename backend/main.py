@@ -70,6 +70,16 @@ def set_monitor(m: Optional[Monitor]) -> None:
     monitor = m
 
 
+def _restart_monitor(sessionid: str) -> None:
+    loop = asyncio.get_event_loop()
+    m = get_monitor()
+    if m:
+        m.stop()
+    m = Monitor(sessionid=sessionid, event_queue=event_queue)
+    set_monitor(m)
+    m.start(loop)
+
+
 # ---------------------------------------------------------------------------
 # Startup cache helper
 # ---------------------------------------------------------------------------
@@ -278,7 +288,7 @@ async def password_login(body: PasswordLoginBody):
         },
     )
 
-    log.info("Response: status=%s, body=%s", r.status_code, r.text[:500])
+    log.info("Response: status=%s", r.status_code)
 
     data = r.json()
     if not data.get("success"):
@@ -293,13 +303,7 @@ async def password_login(body: PasswordLoginBody):
     _refresh_local_cache(sessionid)
     user = get_config()["user"]
 
-    loop = asyncio.get_event_loop()
-    m = get_monitor()
-    if m:
-        m.stop()
-    m = Monitor(sessionid=sessionid, event_queue=event_queue)
-    set_monitor(m)
-    m.start(loop)
+    _restart_monitor(sessionid)
 
     return {"ok": True, "user": user}
 
@@ -402,12 +406,7 @@ async def ws_login(ws: WebSocket):
         msg = None
 
     if msg and msg.get("type") == "success":
-        m = get_monitor()
-        if m:
-            m.stop()
-        m = Monitor(sessionid=msg["sessionid"], event_queue=event_queue)
-        set_monitor(m)
-        m.start(loop)
+        _restart_monitor(msg["sessionid"])
 
     wsapp._keep_running = False
     wsapp.close()
