@@ -179,6 +179,7 @@ class NotificationSub(BaseModel):
     problem: bool
     call: bool
     danmu: bool
+    red_packet: bool = True
 
 
 class CourseConfig(BaseModel):
@@ -191,6 +192,7 @@ class CourseConfig(BaseModel):
     answer_delay_max: int
     answer_last5s: bool = True
     auto_danmu: bool
+    auto_redpacket: bool = True
     danmu_threshold: int
     notification: NotificationSub
     voice_notification: NotificationSub

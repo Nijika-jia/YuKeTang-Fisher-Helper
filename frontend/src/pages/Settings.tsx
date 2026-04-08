@@ -13,6 +13,7 @@ interface CourseConfig {
   answer_delay_max: number
   answer_last5s: boolean
   auto_danmu: boolean
+  auto_redpacket: boolean
   danmu_threshold: number
   notification: NotificationSub
   voice_notification: NotificationSub
@@ -57,6 +58,7 @@ function buildCourseStates(allCourses: CourseItem[], settings: CoursesMap, defau
       answer_delay_max: cfg.answer_delay_max ?? defaults.answer_delay_max,
       answer_last5s: cfg.answer_last5s ?? defaults.answer_last5s,
       auto_danmu: cfg.auto_danmu ?? defaults.auto_danmu,
+      auto_redpacket: cfg.auto_redpacket ?? defaults.auto_redpacket,
       danmu_threshold: cfg.danmu_threshold ?? defaults.danmu_threshold,
       notification: { ...defaults.notification, ...cfg.notification },
       voice_notification: { ...defaults.voice_notification, ...cfg.voice_notification },
@@ -75,7 +77,7 @@ function NotificationSection({
   onChange: (v: NotificationSub) => void
 }) {
   const { t } = useTranslation()
-  const subKeys: (keyof Omit<NotificationSub, 'enabled'>)[] = ['signin', 'problem', 'call', 'danmu']
+  const subKeys: (keyof Omit<NotificationSub, 'enabled'>)[] = ['signin', 'problem', 'call', 'danmu', 'red_packet']
 
   return (
     <div className="notif-section">
@@ -252,6 +254,7 @@ export default function Settings() {
           answer_delay_max: course.answer_delay_max,
           answer_last5s: course.answer_last5s,
           auto_danmu: course.auto_danmu,
+          auto_redpacket: course.auto_redpacket,
           danmu_threshold: course.danmu_threshold,
           notification: course.notification,
           voice_notification: course.voice_notification,
@@ -291,6 +294,7 @@ export default function Settings() {
       answer_delay_max: source.answer_delay_max,
       answer_last5s: source.answer_last5s,
       auto_danmu: source.auto_danmu,
+      auto_redpacket: source.auto_redpacket,
       danmu_threshold: source.danmu_threshold,
       notification: source.notification,
       voice_notification: source.voice_notification,
@@ -337,6 +341,7 @@ export default function Settings() {
             answer_delay_max: defaults.answer_delay_max,
             answer_last5s: defaults.answer_last5s,
             auto_danmu: defaults.auto_danmu,
+            auto_redpacket: defaults.auto_redpacket,
             danmu_threshold: defaults.danmu_threshold,
             notification: { ...defaults.notification },
             voice_notification: { ...defaults.voice_notification },
@@ -617,6 +622,28 @@ export default function Settings() {
                         </div>
                       </div>
                     )}
+                  </div>
+
+                  {/* Red Packet */}
+                  <div className="settings-group">
+                    <span className="settings-group-label">{t('settings.redPacket')}</span>
+                    <div className="form-row">
+                      <label className="form-label">{t('settings.autoRedpacket')}</label>
+                      <div className="toggle-group">
+                        <button
+                          className={`toggle-option ${course.auto_redpacket ? 'selected' : ''}`}
+                          onClick={() => updateField(course.courseId, 'auto_redpacket', true)}
+                        >
+                          {t('common.yes')}
+                        </button>
+                        <button
+                          className={`toggle-option ${!course.auto_redpacket ? 'selected' : ''}`}
+                          onClick={() => updateField(course.courseId, 'auto_redpacket', false)}
+                        >
+                          {t('common.no')}
+                        </button>
+                      </div>
+                    </div>
                   </div>
 
                   {/* Notifications */}

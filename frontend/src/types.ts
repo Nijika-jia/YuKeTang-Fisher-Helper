@@ -4,6 +4,7 @@ export interface NotificationSub {
   problem: boolean
   call: boolean
   danmu: boolean
+  red_packet: boolean
 }
 
 export interface CourseItem {

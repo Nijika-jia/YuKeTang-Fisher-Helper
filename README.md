@@ -7,6 +7,7 @@
 - **自动签到** — 自动完成签到（模拟通过 APP 扫二维码进入课堂）
 - **自动答题** — 支持单选、多选、投票和简答题，可配置答题策略（随机、空白或 AI）
 - **自动弹幕** — 当一段时间内出现超过 3 条相同弹幕时自动跟发（默认阈值可调）
+- **自动抢红包** — 收到红包时自动抢
 - **点名提醒** — 点名时发送通知提醒
 - **语音通知** — 支持语音播报课程事件
 - **分课程设置** — 对每门课程进行精细化的自动化控制
@@ -71,7 +72,6 @@
 - [ ] 支持多种 LLM API
 - [ ] 支持填空题答题
 - [ ] 自动预习
-- [ ] 自动抢红包
 
 ---
 
@@ -84,6 +84,7 @@
 - **Auto Sign-in** — Automatically checks in (simulates scanning the QR code via the app to enter the classroom)
 - **Auto Quiz Answering** — Handles single/multiple choice, voting, and short-answer questions with configurable strategies (random, blank, or AI)
 - **Auto Danmu** — Automatically sends a bullet chat when more than 3 identical messages appear within a short period (default threshold is adjustable)
+- **Auto Red Packet** — Automatically grabs red packets when received
 - **Roll Call Notifications** — Alerts you when roll call happens
 - **Voice Notifications** — Text-to-speech announcements for lesson events
 - **Per-Course Settings** — Fine-grained control over automation for each course
@@ -148,4 +149,3 @@
 - [ ] Support multiple LLM APIs
 - [ ] Support Fill-in-the-blank answering
 - [ ] Auto preview
-- [ ] Auto red packet grabbing

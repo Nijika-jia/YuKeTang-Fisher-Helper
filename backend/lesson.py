@@ -19,6 +19,7 @@ URL_BASIC_INFO = "https://{domain}/api/v3/lesson/basic-info"
 URL_DANMU_SEND = "https://{domain}/api/v3/lesson/danmu/send"
 URL_PROBLEM_ANSWER = "https://{domain}/api/v3/lesson/problem/answer"
 URL_PRESENTATION_FETCH = "https://{domain}/api/v3/lesson/presentation/fetch?presentation_id={presentation_id}"
+URL_REDENVELOPE_PREPARE = "https://{domain}/api/v3/lesson/redenvelope/prepare"
 
 
 class Lesson:
@@ -86,7 +87,7 @@ class Lesson:
             "showStatus": True,
             "fromStart": "50",
         }
-        r = self._post(URL_DANMU_SEND, payload)
+        r = http_request("POST", api_url(URL_DANMU_SEND), headers=self.headers, data=json.dumps(payload))
         self.on_event("danmu", {
             "lesson": self.lessonname,
             "lessonid": self.lessonid,
@@ -94,18 +95,27 @@ class Lesson:
             "status": "success" if r.json()["code"] == 0 else "error",
         })
 
+    def _grab_red_packet(self, red_envelope_id: int) -> None:
+        payload = {
+            "lessonId": self.lessonid,
+            "redEnvelopeId": red_envelope_id,
+        }
+        r = http_request("POST", api_url(URL_REDENVELOPE_PREPARE), headers=self.headers, data=json.dumps(payload))
+        result = r.json()
+        self.on_event("red_packet", {
+            "lesson": self.lessonname,
+            "lessonid": self.lessonid,
+            "redEnvelopeId": red_envelope_id,
+            "status": "success" if result.get("code") == 0 else "error",
+            "message": result.get("msg", ""),
+        })
+
     # ------------------------------------------------------------------
     # Internal helpers
     # ------------------------------------------------------------------
 
-    def _post(self, url_template: str, payload: dict, **url_kwargs: Any):
-        return http_request("POST", api_url(url_template, **url_kwargs), headers=self.headers, data=json.dumps(payload))
-
-    def _get(self, url_template: str, **url_kwargs: Any):
-        return http_request("GET", api_url(url_template, **url_kwargs), headers=self.headers)
-
     def _checkin(self) -> None:
-        r = self._post(URL_CHECKIN, {"source": 21, "lessonId": self.lessonid})
+        r = http_request("POST", api_url(URL_CHECKIN), headers=self.headers, data=json.dumps({"source": 21, "lessonId": self.lessonid}))
         set_auth = r.headers.get("Set-Auth")
         if set_auth:
             self.headers["Authorization"] = "Bearer %s" % set_auth
@@ -117,7 +127,7 @@ class Lesson:
         self.user_uid = user.get("id")
         self.user_uname = user.get("name")
 
-        info = self._get(URL_BASIC_INFO).json()["data"]
+        info = http_request("GET", api_url(URL_BASIC_INFO), headers=self.headers).json()["data"]
         self.teacher_name = (info.get("teacher") or {}).get("name")
 
         self.on_event("signin", {
@@ -128,7 +138,7 @@ class Lesson:
         })
 
     def _get_problems_from_presentation(self, presentation_id: Any) -> List[dict]:
-        r = self._get(URL_PRESENTATION_FETCH, presentation_id=presentation_id)
+        r = http_request("GET", api_url(URL_PRESENTATION_FETCH, presentation_id=presentation_id), headers=self.headers)
         data = r.json()["data"]
         problems = []
         for slide in data.get("slides", []):
@@ -218,7 +228,7 @@ class Lesson:
             "dt": int(time.time() * 1000),
             "result": payload_result,
         }
-        r = self._post(URL_PROBLEM_ANSWER, payload)
+        r = http_request("POST", api_url(URL_PROBLEM_ANSWER), headers=self.headers, data=json.dumps(payload))
         result = r.json()
         self.on_event("problem", {
             "lesson": self.lessonname,
@@ -405,6 +415,11 @@ class Lesson:
 
         elif op == "unlockproblem":
             problem = data["problem"]
+            self.on_event("problem_received", {
+                "lesson": self.lessonname,
+                "lessonid": self.lessonid,
+                "problemid": problem["sid"],
+            })
             self._start_answer_for_problem(problem["sid"], problem.get("limit", -1) - 1)
 
         elif op == "lessonfinished":
@@ -419,6 +434,17 @@ class Lesson:
             content = data.get("danmu", "")
             if content:
                 self._handle_danmu(content)
+
+        elif op == "gainbonus":
+            logger.info("[WS %s] gainbonus raw: %s", self.lessonname, message)
+            redpacket = data.get("redpacket", data)
+            red_envelope_id = redpacket.get("redEnvelopeId")
+            if red_envelope_id and self.course_config.get("auto_redpacket", True):
+                threading.Thread(
+                    target=self._grab_red_packet,
+                    args=(red_envelope_id,),
+                    daemon=True,
+                ).start()
 
         elif op == "callpaused":
             if data.get("name") == self.user_uname:

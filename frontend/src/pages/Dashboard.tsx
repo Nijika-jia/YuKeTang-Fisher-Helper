@@ -28,8 +28,10 @@ interface ActivityEvent {
 const VOICE_SUBOPTION: Partial<Record<string, keyof Omit<VoiceConfig, 'enabled'>>> = {
   signin: 'signin',
   problem: 'problem',
+  problem_received: 'problem',
   call: 'call',
   danmu: 'danmu',
+  red_packet: 'red_packet',
 }
 
 let eventCounter = 0
@@ -41,6 +43,8 @@ function formatEventLabel(event: ActivityEvent, t: (key: string) => string): str
   switch (event.type) {
     case 'signin':
       return `${lesson}${typeName}: ${t(`events.${event.status || 'success'}`)}`
+    case 'problem_received':
+      return `${lesson}${typeName}`
     case 'problem': {
       const problemTypeName = event.problemtype
         ? t(`events.problemType${event.problemtype}`)
@@ -63,6 +67,8 @@ function formatEventLabel(event: ActivityEvent, t: (key: string) => string): str
       return `${lesson}${typeName}: "${event.content || ''}" — ${t(`events.${event.status || 'success'}`)}`
     case 'call':
       return `${lesson}${typeName}`
+    case 'red_packet':
+      return `${lesson}${typeName}: ${t(`events.${event.status || 'success'}`)}`
     case 'lesson_end':
       return `${lesson}${typeName}`
     case 'lesson_start':
@@ -79,6 +85,8 @@ function buildSpeechText(event: ActivityEvent, isChinese: boolean): string {
   switch (event.type) {
     case 'signin':
       return isChinese ? `${lesson}已签到` : `${lesson} checked in`
+    case 'problem_received':
+      return isChinese ? `${lesson}收到题目` : `${lesson} problem received`
     case 'problem':
       if (event.status === 'ai_failed') {
         return isChinese ? `${lesson}AI答题失败，请手动作答` : `${lesson} AI failed, please answer manually`
@@ -88,6 +96,8 @@ function buildSpeechText(event: ActivityEvent, isChinese: boolean): string {
       return isChinese ? '您被点名' : 'You were called on'
     case 'danmu':
       return isChinese ? '弹幕已发送' : 'Danmu sent'
+    case 'red_packet':
+      return isChinese ? `${lesson}已抢红包` : `${lesson} red packet grabbed`
     default:
       return ''
   }
@@ -96,6 +106,8 @@ function buildSpeechText(event: ActivityEvent, isChinese: boolean): string {
 function eventBadgeClass(event: ActivityEvent): string {
   if (event.type === 'lesson_end') return 'badge badge-gray'
   if (event.type === 'lesson_start') return 'badge badge-green'
+  if (event.type === 'red_packet') return event.status === 'success' ? 'badge badge-green' : 'badge badge-red'
+  if (event.type === 'problem_received') return 'badge badge-blue'
   if (event.type === 'call') return 'badge badge-yellow'
   if (event.type === 'network')
     return event.status === 'error' ? 'badge badge-red' : 'badge badge-green'
@@ -147,7 +159,7 @@ export default function Dashboard() {
       .then((data: Record<string, { notification?: VoiceConfig; voice_notification?: VoiceConfig }>) => {
         const voiceMap: Record<string, VoiceConfig> = {}
         const notifMap: Record<string, VoiceConfig> = {}
-        const defaults: VoiceConfig = { enabled: true, signin: true, problem: true, call: true, danmu: false }
+        const defaults: VoiceConfig = { enabled: true, signin: true, problem: true, call: true, danmu: false, red_packet: true }
         for (const [id, cfg] of Object.entries(data)) {
           notifMap[id] = cfg.notification ?? { ...defaults }
           voiceMap[id] = cfg.voice_notification ?? { ...defaults, enabled: false }

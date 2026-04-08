@@ -47,6 +47,7 @@ DEFAULT_COURSE_CONFIG: dict = {
     "answer_delay_max": 2,
     "answer_last5s": True,
     "auto_danmu": True,
+    "auto_redpacket": True,
     "danmu_threshold": 3,
     "notification": {
         "enabled": False,
@@ -54,6 +55,7 @@ DEFAULT_COURSE_CONFIG: dict = {
         "problem": True,
         "call": True,
         "danmu": True,
+        "red_packet": True,
     },
     "voice_notification": {
         "enabled": False,
@@ -61,6 +63,7 @@ DEFAULT_COURSE_CONFIG: dict = {
         "problem": True,
         "call": True,
         "danmu": True,
+        "red_packet": True,
     },
 }
 

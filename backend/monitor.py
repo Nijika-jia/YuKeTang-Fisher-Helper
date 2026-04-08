@@ -10,7 +10,7 @@ from lesson import Lesson
 
 logger = logging.getLogger(__name__)
 
-POLL_INTERVAL = 30
+POLL_INTERVAL = 60
 
 URL_ON_LESSON = "https://{domain}/api/v3/classroom/on-lesson-upcoming-exam"
 
