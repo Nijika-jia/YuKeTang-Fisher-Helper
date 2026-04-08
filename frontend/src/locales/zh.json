@@ -5,7 +5,6 @@
     "settings": "设置"
   },
   "login": {
-    "title": "微信扫码登录",
     "scanning": "扫码中...",
     "success": "登录成功！正在跳转...",
     "refresh": "刷新二维码",
@@ -14,7 +13,6 @@
     "server": "服务器",
     "methodQR": "扫码登录",
     "methodPassword": "密码登录",
-    "pwTitle": "密码登录",
     "phonePlaceholder": "手机号",
     "passwordPlaceholder": "密码",
     "pwLogin": "登录",
@@ -97,8 +95,6 @@
     "problemType5": "简答题",
     "success": "成功",
     "error": "失败",
-    "no_answer": "未找到答案",
-    "not_found": "题目未找到",
     "source_ai": "AI",
     "source_random": "随机",
     "source_blank": "空答案",

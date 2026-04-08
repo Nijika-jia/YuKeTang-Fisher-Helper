@@ -5,7 +5,6 @@
     "settings": "Settings"
   },
   "login": {
-    "title": "Sign in with WeChat",
     "scanning": "Scanning...",
     "success": "Login successful! Redirecting...",
     "refresh": "Refresh QR Code",
@@ -14,7 +13,6 @@
     "server": "Server",
     "methodQR": "QR Code",
     "methodPassword": "Password",
-    "pwTitle": "Sign in with Password",
     "phonePlaceholder": "Phone number",
     "passwordPlaceholder": "Password",
     "pwLogin": "Sign in",
@@ -97,8 +95,6 @@
     "problemType5": "Short Answer",
     "success": "success",
     "error": "error",
-    "no_answer": "no answer",
-    "not_found": "not found",
     "source_ai": "AI",
     "source_random": "random",
     "source_blank": "blank",

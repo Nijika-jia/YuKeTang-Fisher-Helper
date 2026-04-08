@@ -22,7 +22,11 @@ from contextlib import asynccontextmanager
 from pathlib import Path
 from typing import Optional
 
-import requests
+import base64
+
+from Crypto.PublicKey import RSA as CryptoRSA
+from Crypto.Cipher import PKCS1_v1_5
+
 import websocket
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
@@ -35,7 +39,7 @@ from config import (
     get_config, save_config, get_course_config, update_course_config,
     get_ai_config, update_ai_config,
     get_domain, set_domain,
-    make_headers, api_url, api_get,
+    make_headers, api_url, http_request,
     DEFAULT_COURSE_CONFIG, DOMAIN_OPTIONS,
 )
 from monitor import Monitor
@@ -45,6 +49,8 @@ URL_WSS = "wss://{domain}/wsapp/"
 URL_USER_INFO = "https://{domain}/api/v3/user/basic-info"
 URL_COURSE_LIST = "https://{domain}/v2/api/web/courses/list?identity=2"
 URL_WEB_LOGIN = "https://{domain}/pc/web_login"
+URL_PASSWORD_LOGIN = "https://{domain}/pc/login/verify_pwd_login/"
+URL_GET_PUBLIC_KEY = "https://{domain}/pc/register/get_pws_public_key/"
 
 # ---------------------------------------------------------------------------
 # Application state
@@ -73,9 +79,9 @@ def _refresh_local_cache(sessionid: str) -> None:
     cfg = get_config()
     headers = make_headers(sessionid)
 
-    cfg["user"] = api_get(URL_USER_INFO, headers).json()["data"]
+    cfg["user"] = http_request("GET", api_url(URL_USER_INFO), headers=headers).json()["data"]
 
-    raw_courses = api_get(URL_COURSE_LIST, headers).json()["data"]["list"]
+    raw_courses = http_request("GET", api_url(URL_COURSE_LIST), headers=headers).json()["data"]["list"]
     course_list = [
         {
             "classroom_id": str(c["classroom_id"]),
@@ -146,7 +152,7 @@ app = FastAPI(title="Yuketang Helper API", lifespan=lifespan)
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173", "http://127.0.0.1:5173", "http://localhost:3000", "http://127.0.0.1:3000"],
+    allow_origins=["http://localhost:3000", "http://127.0.0.1:3000"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -173,6 +179,7 @@ class CourseConfig(BaseModel):
     type5: str
     answer_delay_min: int
     answer_delay_max: int
+    answer_last5s: bool = True
     auto_danmu: bool
     danmu_threshold: int
     notification: NotificationSub
@@ -232,6 +239,71 @@ async def auth_logout():
     return {"ok": True}
 
 
+class PasswordLoginBody(BaseModel):
+    phone: str
+    password: str
+    ticket: str
+    randstr: str
+
+
+@app.post("/api/auth/password-login")
+async def password_login(body: PasswordLoginBody):
+    log = logging.getLogger("auth")
+    domain = get_domain()
+
+    # Fetch RSA public key from Yuketang
+    key_r = http_request("GET", api_url(URL_GET_PUBLIC_KEY),
+        headers={"Referer": f"https://{domain}/"},
+    )
+    pub_pem = key_r.json()["data"]["public_key"]
+    cipher = PKCS1_v1_5.new(CryptoRSA.import_key(pub_pem))
+    encrypted = base64.b64encode(cipher.encrypt(body.password.encode())).decode()
+
+    login_url = api_url(URL_PASSWORD_LOGIN)
+    payload = {
+        "name": body.phone,
+        "pwd": encrypted,
+        "type": "PP",
+        "ticket": body.ticket,
+        "randstr": body.randstr,
+        "hcaptcha_token": "",
+    }
+    log.info("Sending login: url=%s, phone=%s, ticket=%s...", login_url, body.phone, body.ticket[:30] if body.ticket else "")
+
+    r = http_request("POST", login_url,
+        json=payload,
+        headers={
+            "Content-Type": "application/json",
+            "Referer": f"https://{domain}/",
+        },
+    )
+
+    log.info("Response: status=%s, body=%s", r.status_code, r.text[:500])
+
+    data = r.json()
+    if not data.get("success"):
+        return {"ok": False, "error": data.get("msg") or str(data)}
+
+    sessionid = r.cookies["sessionid"]
+
+    cfg = get_config()
+    cfg["sessionid"] = sessionid
+    save_config(cfg)
+
+    _refresh_local_cache(sessionid)
+    user = get_config()["user"]
+
+    loop = asyncio.get_event_loop()
+    m = get_monitor()
+    if m:
+        m.stop()
+    m = Monitor(sessionid=sessionid, event_queue=event_queue)
+    set_monitor(m)
+    m.start(loop)
+
+    return {"ok": True, "user": user}
+
+
 # ---------------------------------------------------------------------------
 # Login WebSocket
 # ---------------------------------------------------------------------------
@@ -257,12 +329,7 @@ async def ws_login(ws: WebSocket):
         op = data["op"]
 
         if op == "requestlogin":
-            import base64
-            resp = requests.get(
-                url=data["ticket"],
-                proxies={"http": None, "https": None},
-                timeout=10,
-            )
+            resp = http_request("GET", data["ticket"])
             img_b64 = base64.b64encode(resp.content).decode()
             content_type = resp.headers.get("Content-Type", "image/png").split(";")[0]
             data_url = "data:%s;base64,%s" % (content_type, img_b64)
@@ -271,17 +338,8 @@ async def ws_login(ws: WebSocket):
             )
 
         elif op == "loginsuccess":
-            r = requests.post(
-                url=api_url(URL_WEB_LOGIN),
+            r = http_request("POST", api_url(URL_WEB_LOGIN),
                 data=json.dumps({"UserID": data["UserID"], "Auth": data["Auth"]}),
-                headers={
-                    "User-Agent": (
-                        "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:104.0) "
-                        "Gecko/20100101 Firefox/104.0"
-                    )
-                },
-                proxies={"http": None, "https": None},
-                timeout=10,
             )
             sessionid = dict(r.cookies)["sessionid"]
 

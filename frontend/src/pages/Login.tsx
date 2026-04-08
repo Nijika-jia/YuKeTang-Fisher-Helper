@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 
 type LoginStatus = 'waiting' | 'qr_ready' | 'scanning' | 'success'
+type LoginMethod = 'qrcode' | 'password'
 
 interface ServerOption {
   key: string
@@ -14,6 +15,15 @@ interface LoginProps {
   onSuccess: () => void
 }
 
+declare global {
+  interface Window {
+    TencentCaptcha: new (
+      appId: string,
+      callback: (res: { ret: number; ticket: string; randstr: string }) => void,
+    ) => { show: () => void; destroy: () => void }
+  }
+}
+
 export default function Login({ onSuccess }: LoginProps) {
   const { t, i18n } = useTranslation()
   const navigate = useNavigate()
@@ -23,6 +33,12 @@ export default function Login({ onSuccess }: LoginProps) {
   const [domain, setDomain] = useState<string>('')
   const [serverOptions, setServerOptions] = useState<ServerOption[]>([])
   const domainRef = useRef<string>('')
+
+  const [method, setMethod] = useState<LoginMethod>('qrcode')
+  const [phone, setPhone] = useState('')
+  const [password, setPassword] = useState('')
+  const [pwLoading, setPwLoading] = useState(false)
+  const [pwError, setPwError] = useState('')
 
   useEffect(() => {
     fetch('/api/domain')
@@ -41,7 +57,7 @@ export default function Login({ onSuccess }: LoginProps) {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ domain: d }),
-    }).then(() => connectWs())
+    }).then(() => { if (method === 'qrcode') connectWs() })
   }
 
   function handleDomainChange(newDomain: string) {
@@ -49,6 +65,16 @@ export default function Login({ onSuccess }: LoginProps) {
     domainRef.current = newDomain
     wsRef.current?.close()
     saveDomainAndConnect(newDomain)
+  }
+
+  function handleMethodChange(m: LoginMethod) {
+    setMethod(m)
+    setPwError('')
+    if (m === 'qrcode') {
+      saveDomainAndConnect(domainRef.current)
+    } else {
+      wsRef.current?.close()
+    }
   }
 
   function connectWs() {
@@ -87,10 +113,69 @@ export default function Login({ onSuccess }: LoginProps) {
     saveDomainAndConnect(domainRef.current)
   }
 
+  function handlePasswordLogin() {
+    if (!phone || !password) {
+      setPwError(t('login.pwFillAll'))
+      return
+    }
+    setPwError('')
+    setPwLoading(true)
+
+    const captcha = new window.TencentCaptcha('2091064951', (res) => {
+      if (res.ret !== 0) {
+        setPwLoading(false)
+        return
+      }
+
+      fetch('/api/auth/password-login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          phone,
+          password,
+          ticket: res.ticket,
+          randstr: res.randstr,
+        }),
+      })
+        .then(r => r.json())
+        .then(data => {
+          setPwLoading(false)
+          if (data.ok) {
+            setStatus('success')
+            onSuccess()
+            setTimeout(() => navigate('/dashboard'), 1000)
+          } else {
+            setPwError(data.error || t('login.pwFailed'))
+          }
+        })
+        .catch(err => {
+          setPwLoading(false)
+          setPwError(String(err))
+        })
+    })
+    captcha.show()
+  }
+
   return (
     <div className="login-container">
       <div className="login-card">
-        <h1 className="login-title">{t('login.title')}</h1>
+        <div className="login-method-toggle">
+          <button
+            className={`method-tab ${method === 'qrcode' ? 'active' : ''}`}
+            onClick={() => handleMethodChange('qrcode')}
+            disabled={status === 'success'}
+          >
+            {t('login.methodQR')}
+          </button>
+          <button
+            className={`method-tab ${method === 'password' ? 'active' : ''}`}
+            onClick={() => handleMethodChange('password')}
+            disabled={status === 'success'}
+          >
+            {t('login.methodPassword')}
+          </button>
+        </div>
+
         <div className="form-group" style={{ marginBottom: '1rem', width: '100%' }}>
           <label className="form-label" style={{ marginBottom: '0.5rem', marginRight: '0.5rem' }}>{t('login.server')}</label>
           <select
@@ -107,44 +192,94 @@ export default function Login({ onSuccess }: LoginProps) {
           </select>
         </div>
 
-        <div className="qr-wrapper">
-          {status === 'waiting' && (
-            <div className="qr-placeholder">
-              <div className="spinner" />
-              <span>{t('login.waiting')}</span>
-            </div>
-          )}
-
-          {(status === 'qr_ready' || status === 'scanning') && qrUrl && (
-            <>
-              <img
-                src={qrUrl}
-                alt="QR Code"
-                className={`qr-image ${status === 'scanning' ? 'qr-dimmed' : ''}`}
-              />
-              {status === 'scanning' && (
-                <div className="qr-overlay">
-                  <div className="spinner spinner-white" />
-                  <span>{t('login.scanning')}</span>
+        {method === 'qrcode' ? (
+          <>
+            <div className="qr-wrapper">
+              {status === 'waiting' && (
+                <div className="qr-placeholder">
+                  <div className="spinner" />
+                  <span>{t('login.waiting')}</span>
                 </div>
               )}
-            </>
-          )}
 
-          {status === 'success' && (
-            <div className="qr-placeholder qr-success">
-              <div className="success-icon">✓</div>
-              <span>{t('login.success')}</span>
+              {(status === 'qr_ready' || status === 'scanning') && qrUrl && (
+                <>
+                  <img
+                    src={qrUrl}
+                    alt="QR Code"
+                    className={`qr-image ${status === 'scanning' ? 'qr-dimmed' : ''}`}
+                  />
+                  {status === 'scanning' && (
+                    <div className="qr-overlay">
+                      <div className="spinner spinner-white" />
+                      <span>{t('login.scanning')}</span>
+                    </div>
+                  )}
+                </>
+              )}
+
+              {status === 'success' && (
+                <div className="qr-placeholder qr-success">
+                  <div className="success-icon">✓</div>
+                  <span>{t('login.success')}</span>
+                </div>
+              )}
             </div>
-          )}
 
-
-        </div>
-
-        {status === 'qr_ready' && (
-          <button className="btn btn-secondary" onClick={handleRefresh}>
-            {t('login.refresh')}
-          </button>
+            {status === 'qr_ready' && (
+              <button className="btn btn-secondary" onClick={handleRefresh}>
+                {t('login.refresh')}
+              </button>
+            )}
+          </>
+        ) : (
+          <>
+            {status === 'success' ? (
+              <div className="qr-wrapper">
+                <div className="qr-placeholder qr-success">
+                  <div className="success-icon">✓</div>
+                  <span>{t('login.success')}</span>
+                </div>
+              </div>
+            ) : (
+              <div style={{ width: '100%' }}>
+                <div className="form-group" style={{ marginBottom: '0.75rem' }}>
+                  <input
+                    type="tel"
+                    className="form-input"
+                    placeholder={t('login.phonePlaceholder')}
+                    value={phone}
+                    onChange={e => setPhone(e.target.value)}
+                    disabled={pwLoading}
+                    style={{ width: '100%', padding: '0.5rem 0.75rem' }}
+                  />
+                </div>
+                <div className="form-group" style={{ marginBottom: '0.75rem' }}>
+                  <input
+                    type="password"
+                    className="form-input"
+                    placeholder={t('login.passwordPlaceholder')}
+                    value={password}
+                    onChange={e => setPassword(e.target.value)}
+                    disabled={pwLoading}
+                    onKeyDown={e => { if (e.key === 'Enter') handlePasswordLogin() }}
+                    style={{ width: '100%', padding: '0.5rem 0.75rem' }}
+                  />
+                </div>
+                {pwError && (
+                  <p style={{ color: 'var(--color-error, #e53e3e)', fontSize: '0.85rem', marginBottom: '0.75rem' }}>{pwError}</p>
+                )}
+                <button
+                  className="btn btn-primary"
+                  onClick={handlePasswordLogin}
+                  disabled={pwLoading}
+                  style={{ width: '100%' }}
+                >
+                  {pwLoading ? t('login.pwLoggingIn') : t('login.pwLogin')}
+                </button>
+              </div>
+            )}
+          </>
         )}
 
         <p className="login-note">{t('login.note')}</p>

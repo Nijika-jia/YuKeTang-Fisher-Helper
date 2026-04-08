@@ -2,7 +2,7 @@ import logging
 import re
 from typing import List, Optional
 
-import requests
+from config import http_request
 
 logger = logging.getLogger(__name__)
 
@@ -32,7 +32,7 @@ SHORT_ANSWER_PROMPT = (
 
 class AIProvider:
     def _fetch_image(self, url: str) -> bytes:
-        resp = requests.get(url, timeout=15, proxies={"http": None, "https": None})
+        resp = http_request("GET", url)
         resp.raise_for_status()
         return resp.content
 

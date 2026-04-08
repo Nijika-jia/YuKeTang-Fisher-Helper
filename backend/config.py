@@ -1,6 +1,8 @@
 import json
+import logging
 import os
 import sys
+import time as _time
 from pathlib import Path
 from typing import Any
 
@@ -172,10 +174,6 @@ def make_headers(sessionid: str) -> dict:
     domain = get_domain()
     return {
         "Cookie": "sessionid=%s" % sessionid,
-        "User-Agent": (
-            "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:97.0) "
-            "Gecko/20100101 Firefox/97.0"
-        ),
         "Referer": "https://%s/" % domain,
         "xt-agent": "web",
     }
@@ -185,20 +183,40 @@ def api_url(template: str, **kwargs: Any) -> str:
     return template.format(domain=get_domain(), **kwargs)
 
 
-def api_get(url_template: str, headers: dict, **url_kwargs: Any) -> requests.Response:
-    return requests.get(
-        url=api_url(url_template, **url_kwargs),
-        headers=headers,
-        proxies={"http": None, "https": None},
-        timeout=10,
-    )
+_http_log = logging.getLogger("http")
+
+_DEFAULT_PROXIES = {"http": None, "https": None}
+_DEFAULT_UA = "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:104.0) Gecko/20100101 Firefox/104.0"
 
 
-def api_post(url_template: str, headers: dict, payload: dict, **url_kwargs: Any) -> requests.Response:
-    return requests.post(
-        url=api_url(url_template, **url_kwargs),
-        headers=headers,
-        data=json.dumps(payload),
-        proxies={"http": None, "https": None},
-        timeout=10,
-    )
+def http_request(
+    method: str,
+    url: str,
+    retries: int = 10,
+    timeout: int = 5,
+    **kwargs: Any,
+) -> requests.Response:
+    """Send an HTTP request with automatic retry on non-2xx or network errors."""
+    kwargs.setdefault("proxies", _DEFAULT_PROXIES)
+    kwargs.setdefault("timeout", timeout)
+    headers = kwargs.setdefault("headers", {})
+    headers.setdefault("User-Agent", _DEFAULT_UA)
+
+    last_exc: Exception | None = None
+    for attempt in range(1, retries + 1):
+        try:
+            r = requests.request(method, url, **kwargs)
+            if r.status_code < 500:
+                return r
+            _http_log.warning("HTTP %s %s → %s (attempt %d/%d)", method, url, r.status_code, attempt, retries)
+        except requests.RequestException as e:
+            _http_log.warning("HTTP %s %s failed: %s (attempt %d/%d)", method, url, e, attempt, retries)
+            last_exc = e
+        if attempt < retries:
+            _time.sleep(min(attempt, 3))
+
+    if last_exc:
+        raise last_exc
+    return r  # type: ignore[possibly-undefined]
+
+

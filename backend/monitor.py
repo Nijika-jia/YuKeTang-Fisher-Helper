@@ -5,7 +5,7 @@ import time
 from typing import Dict, Optional
 
 import event_log
-from config import get_course_config, update_course_config, make_headers, api_get
+from config import get_course_config, update_course_config, make_headers, api_url, http_request
 from lesson import Lesson
 
 logger = logging.getLogger(__name__)
@@ -58,7 +58,7 @@ class Monitor:
         while self._running:
             try:
                 headers = make_headers(self.sessionid)
-                lesson_list = api_get(URL_ON_LESSON, headers).json()["data"]["onLessonClassrooms"]
+                lesson_list = http_request("GET", api_url(URL_ON_LESSON), headers=headers).json()["data"]["onLessonClassrooms"]
                 logger.info("Monitor poll: %d active lesson(s)", len(lesson_list))
                 self._sync_lessons(lesson_list)
             except Exception as e:

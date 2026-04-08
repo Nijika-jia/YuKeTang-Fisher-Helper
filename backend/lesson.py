@@ -5,11 +5,10 @@ import threading
 import time
 from typing import Any, Callable, Dict, List, Optional
 
-import requests
 import websocket
 
 from ai_provider import AIProvider, create_provider
-from config import api_get, api_post, api_url, get_active_ai_key, get_ai_config, get_all_ai_keys, get_config, make_headers
+from config import api_url, http_request, get_active_ai_key, get_ai_config, get_all_ai_keys, get_config, make_headers
 
 logger = logging.getLogger(__name__)
 
@@ -99,11 +98,11 @@ class Lesson:
     # Internal helpers
     # ------------------------------------------------------------------
 
-    def _post(self, url_template: str, payload: dict, **url_kwargs: Any) -> requests.Response:
-        return api_post(url_template, self.headers, payload, **url_kwargs)
+    def _post(self, url_template: str, payload: dict, **url_kwargs: Any):
+        return http_request("POST", api_url(url_template, **url_kwargs), headers=self.headers, data=json.dumps(payload))
 
-    def _get(self, url_template: str, **url_kwargs: Any) -> requests.Response:
-        return api_get(url_template, self.headers, **url_kwargs)
+    def _get(self, url_template: str, **url_kwargs: Any):
+        return http_request("GET", api_url(url_template, **url_kwargs), headers=self.headers)
 
     def _checkin(self) -> None:
         r = self._post(URL_CHECKIN, {"source": 21, "lessonId": self.lessonid})
@@ -265,11 +264,10 @@ class Lesson:
 
         if mode == "ai" and self._get_ai_provider():
             # Start AI call in background thread.
-            ai_timeout = max(1, limit - self._FALLBACK_RESERVE) if limit > 0 else None
             result_holder = [None]
             ai_done = threading.Event()
 
-            logger.info("Attempting AI answer for problem %s with timeout %s seconds", problemid, ai_timeout)
+            logger.info("Attempting AI answer for problem %s", problemid)
 
             def _call_ai():
                 try:
