@@ -16,9 +16,10 @@ URL_ON_LESSON = "https://{domain}/api/v3/classroom/on-lesson-upcoming-exam"
 
 
 class Monitor:
-    def __init__(self, sessionid: str, event_queue: asyncio.Queue) -> None:
+    def __init__(self, sessionid: str, event_queue: asyncio.Queue, on_session_expired: Optional[callable] = None) -> None:
         self.sessionid = sessionid
         self.event_queue = event_queue
+        self._on_session_expired = on_session_expired
         self._active_lessons: Dict[int, Lesson] = {}
         self._lock = threading.Lock()
         self._running = False
@@ -58,7 +59,16 @@ class Monitor:
         while self._running:
             try:
                 headers = make_headers(self.sessionid)
-                lesson_list = http_request("GET", api_url(URL_ON_LESSON), headers=headers).json()["data"]["onLessonClassrooms"]
+                r = http_request("GET", api_url(URL_ON_LESSON), headers=headers)
+                data = r.json()
+                if data.get("code") != 0:
+                    logger.warning("Session expired: %s", data.get("msg", ""))
+                    self._emit("session_expired", {"message": data.get("msg", "Session expired")})
+                    if self._on_session_expired:
+                        self._on_session_expired()
+                    self._running = False
+                    return
+                lesson_list = data["data"]["onLessonClassrooms"]
                 logger.info("Monitor poll: %d active lesson(s)", len(lesson_list))
                 self._sync_lessons(lesson_list)
             except Exception as e:

@@ -70,12 +70,21 @@ def set_monitor(m: Optional[Monitor]) -> None:
     monitor = m
 
 
+def _handle_session_expired() -> None:
+    cfg = get_config()
+    cfg["sessionid"] = ""
+    cfg["user"] = {}
+    cfg["course_list"] = []
+    save_config(cfg)
+    set_monitor(None)
+
+
 def _restart_monitor(sessionid: str) -> None:
     loop = asyncio.get_event_loop()
     m = get_monitor()
     if m:
         m.stop()
-    m = Monitor(sessionid=sessionid, event_queue=event_queue)
+    m = Monitor(sessionid=sessionid, event_queue=event_queue, on_session_expired=_handle_session_expired)
     set_monitor(m)
     m.start(loop)
 

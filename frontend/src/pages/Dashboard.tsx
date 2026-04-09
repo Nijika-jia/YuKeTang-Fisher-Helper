@@ -69,6 +69,8 @@ function formatEventLabel(event: ActivityEvent, t: (key: string) => string): str
       return `${lesson}${typeName}`
     case 'red_packet':
       return `${lesson}${typeName}: ${t(`events.${event.status || 'success'}`)}`
+    case 'session_expired':
+      return `${typeName}`
     case 'lesson_end':
       return `${lesson}${typeName}`
     case 'lesson_start':
@@ -104,6 +106,7 @@ function buildSpeechText(event: ActivityEvent, isChinese: boolean): string {
 }
 
 function eventBadgeClass(event: ActivityEvent): string {
+  if (event.type === 'session_expired') return 'badge badge-red'
   if (event.type === 'lesson_end') return 'badge badge-gray'
   if (event.type === 'lesson_start') return 'badge badge-green'
   if (event.type === 'red_packet') return event.status === 'success' ? 'badge badge-green' : 'badge badge-red'
