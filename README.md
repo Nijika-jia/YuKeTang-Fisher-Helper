@@ -5,7 +5,8 @@
 ## 功能
 
 - **自动签到** — 自动完成签到（模拟通过 APP 扫二维码进入课堂）
-- **自动答题** — 支持单选、多选、投票和简答题，可配置答题策略（随机、空白或 AI）
+- **自动答题** — 支持单选、多选、投票和简答题，可配置答题策略（随机、空白、AI 或答案队列）
+- **答案队列** — 支持预设答案，按PPT页数提示用户填写对应答案，自动提交预设答案
 - **自动弹幕** — 当一段时间内出现超过 3 条相同弹幕时自动跟发（默认阈值可调）
 - **自动抢红包** — 收到红包时自动抢
 - **点名提醒** — 点名时发送通知提醒
@@ -82,7 +83,8 @@
 ## Features
 
 - **Auto Sign-in** — Automatically checks in (simulates scanning the QR code via the app to enter the classroom)
-- **Auto Quiz Answering** — Handles single/multiple choice, voting, and short-answer questions with configurable strategies (random, blank, or AI)
+- **Auto Quiz Answering** — Handles single/multiple choice, voting, and short-answer questions with configurable strategies (random, blank, AI, or answer queue)
+- **Answer Queue** — Supports preset answers, prompts users to fill in corresponding answers by PPT page number, and automatically submits preset answers
 - **Auto Danmu** — Automatically sends a bullet chat when more than 3 identical messages appear within a short period (default threshold is adjustable)
 - **Auto Red Packet** — Automatically grabs red packets when received
 - **Roll Call Notifications** — Alerts you when roll call happens
