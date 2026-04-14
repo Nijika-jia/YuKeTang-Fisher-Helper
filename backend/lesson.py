@@ -8,7 +8,7 @@ from typing import Any, Callable, Dict, List, Optional
 import websocket
 
 from ai_provider import AIProvider, create_provider
-from config import api_url, http_request, get_active_ai_key, get_ai_config, get_all_ai_keys, get_config, make_headers
+from config import api_url, http_request, get_active_ai_key, get_ai_config, get_all_ai_keys, get_config, make_headers, get_answer_queue, remove_answer_from_queue
 
 logger = logging.getLogger(__name__)
 
@@ -50,6 +50,7 @@ class Lesson:
         self.user_uname: Optional[str] = None
         self.teacher_name: Optional[str] = None
         self._stopped_externally = False
+        self._used_answers: List[Dict[str, Any]] = []
 
     # ------------------------------------------------------------------
     # Public API
@@ -94,6 +95,55 @@ class Lesson:
             "content": content,
             "status": "success" if r.json()["code"] == 0 else "error",
         })
+
+    def _check_answer_queue(self, problem: dict) -> Optional[Any]:
+        """Get the next answer from the queue that matches the problem type."""
+        queue = get_answer_queue()
+        problemtype = problem.get("problemType")
+        
+        if not queue:
+            return None
+            
+        # Get the first answer from the queue
+        answer_entry = queue[0]
+        answer = answer_entry.get("answer")
+        answer_type = answer_entry.get("type")
+        
+        if not answer:
+            return None
+            
+        # Process answer based on problem type
+        if problemtype == 1:  # Single choice
+            if answer_type == "single" or answer_type == "multiple":
+                # For single choice, just take the first character
+                processed_answer = [answer.strip()[0].upper()]
+            else:
+                return None
+                
+        elif problemtype == 2:  # Multiple choice
+            if answer_type == "multiple" or answer_type == "single":
+                # For multiple choice, split by comma and strip whitespace
+                processed_answer = [c.strip().upper() for c in answer.split(",") if c.strip()]
+            else:
+                return None
+                
+        elif problemtype == 5:  # Short answer
+            if answer_type == "short":
+                processed_answer = answer
+            else:
+                return None
+                
+        else:
+            return None
+            
+        self._used_answers.append({
+            "problem_id": problem.get("problemId"),
+            "ppt_page": answer_entry.get("page"),
+            "answer": processed_answer,
+            "timestamp": time.time()
+        })
+        remove_answer_from_queue(0)
+        return processed_answer
 
     def _grab_red_packet(self, red_envelope_id: int) -> None:
         payload = {
@@ -271,6 +321,16 @@ class Lesson:
 
     def _answer_problem(self, problem: dict, problemid: Any, problemtype: int, mode: str, limit: int) -> None:
         start_time = time.time()
+        
+        # Check answer queue only when mode is "queue"
+        if mode == "queue":
+            queue_answer = self._check_answer_queue(problem)
+            if queue_answer is not None:
+                logger.info("Using answer from queue for problem %s", problemid)
+                if not self._wait_for_delay(start_time, limit):
+                    return
+                self._submit_answer(problemid, problemtype, queue_answer, "queue")
+                return
 
         if mode == "ai" and self._get_ai_provider():
             # Start AI call in background thread.

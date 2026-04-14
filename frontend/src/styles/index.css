@@ -2,33 +2,66 @@
    CSS Custom Properties
    =========================== */
 :root {
-  --color-bg: #f5f7fa;
-  --color-surface: #ffffff;
-  --color-border: #e2e8f0;
-  --color-text: #1a202c;
-  --color-text-muted: #718096;
-  --color-primary: #4a6cf7;
-  --color-primary-hover: #3b5bdb;
-  --color-primary-light: #ebefff;
-  --color-success: #38a169;
+  /* Design System Colors */
+  --color-bg: #faf9f7; /* Warm Cream */
+  --color-surface: #ffffff; /* Pure White */
+  --color-border: #dad4c8; /* Oat Border */
+  --color-border-light: #eee9df; /* Oat Light */
+  --color-text: #000000; /* Clay Black */
+  --color-text-muted: #9f9b93; /* Warm Silver */
+  --color-text-secondary: #55534e; /* Warm Charcoal */
+  
+  /* Swatch Colors */
+  --color-matcha-300: #84e7a5;
+  --color-matcha-600: #078a52;
+  --color-matcha-800: #02492a;
+  --color-slushie-500: #3bd3fd;
+  --color-slushie-800: #0089ad;
+  --color-lemon-400: #f8cc65;
+  --color-lemon-500: #fbbd41;
+  --color-lemon-700: #d08a11;
+  --color-lemon-800: #9d6a09;
+  --color-ube-300: #c1b0ff;
+  --color-ube-800: #43089f;
+  --color-ube-900: #32037d;
+  --color-pomegranate-400: #fc7981;
+  --color-blueberry-800: #01418d;
+  
+  /* Primary Colors */
+  --color-primary: #078a52; /* Matcha 600 */
+  --color-primary-hover: #02492a; /* Matcha 800 */
+  --color-primary-light: #f0fff4;
+  --color-success: #078a52; /* Matcha 600 */
   --color-success-bg: #f0fff4;
-  --color-danger: #e53e3e;
+  --color-danger: #fc7981; /* Pomegranate 400 */
   --color-danger-bg: #fff5f5;
-  --color-warning: #d69e2e;
+  --color-warning: #fbbd41; /* Lemon 500 */
   --color-warning-bg: #fffff0;
-  --color-gray: #a0aec0;
-  --color-gray-bg: #edf2f7;
+  --color-gray: #9f9b93; /* Warm Silver */
+  --color-gray-bg: #faf9f7; /* Warm Cream */
   --color-nav-bg: #ffffff;
-  --color-nav-border: #e2e8f0;
-  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.08);
-  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.1);
+  --color-nav-border: #dad4c8; /* Oat Border */
+  
+  /* Shadows */
+  --shadow-sm: rgba(0,0,0,0.1) 0px 1px 1px, rgba(0,0,0,0.04) 0px -1px 1px inset, rgba(0,0,0,0.05) 0px -0.5px 1px;
+  --shadow-md: rgba(0,0,0,0.1) 0px 1px 1px, rgba(0,0,0,0.04) 0px -1px 1px inset, rgba(0,0,0,0.05) 0px -0.5px 1px;
+  --shadow-hover: rgb(0,0,0) -7px 7px;
+  
+  /* Border Radius */
   --radius-sm: 4px;
-  --radius-md: 8px;
-  --radius-lg: 12px;
-  --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue',
+  --radius-md: 12px;
+  --radius-lg: 24px;
+  --radius-xl: 40px;
+  --radius-pill: 1584px;
+  
+  /* Fonts */
+  --font-sans: 'Roobert', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue',
     Arial, 'Noto Sans', sans-serif;
-  --font-mono: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+  --font-mono: 'Space Mono', 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+  
+  /* Transitions */
   --transition: 150ms ease;
+  --transition-hover: 200ms ease;
 }
 
 /* ===========================
@@ -49,11 +82,12 @@ body {
 
 body {
   font-family: var(--font-sans);
-  font-size: 20px;
+  font-size: 18px;
   line-height: 1.6;
   color: var(--color-text);
   background-color: var(--color-bg);
   -webkit-font-smoothing: antialiased;
+  font-feature-settings: "ss03", "ss10", "ss11", "ss12";
 }
 
 /* ===========================
@@ -67,7 +101,7 @@ body {
 
 .main-content {
   flex: 1;
-  padding: 24px 16px;
+  padding: 32px 24px;
   max-width: 1100px;
   margin: 0 auto;
   width: 100%;
@@ -160,13 +194,14 @@ button {
   font-size: 14px;
   border: none;
   border-radius: var(--radius-sm);
-  transition: background var(--transition), color var(--transition),
-    opacity var(--transition);
+  transition: all var(--transition-hover);
 }
 
 button:disabled {
   opacity: 0.6;
   cursor: not-allowed;
+  transform: none !important;
+  box-shadow: none !important;
 }
 
 .btn {
@@ -176,6 +211,8 @@ button:disabled {
   padding: 8px 18px;
   font-weight: 500;
   border-radius: var(--radius-md);
+  transition: all var(--transition-hover);
+  position: relative;
 }
 
 .btn-primary {
@@ -185,6 +222,8 @@ button:disabled {
 
 .btn-primary:hover:not(:disabled) {
   background: var(--color-primary-hover);
+  transform: rotateZ(-8deg) translateY(-2px);
+  box-shadow: var(--shadow-hover);
 }
 
 .btn-secondary {
@@ -195,6 +234,8 @@ button:disabled {
 
 .btn-secondary:hover:not(:disabled) {
   background: var(--color-border);
+  transform: rotateZ(-8deg) translateY(-2px);
+  box-shadow: var(--shadow-hover);
 }
 
 .btn-success {
@@ -202,9 +243,21 @@ button:disabled {
   color: #fff;
 }
 
+.btn-success:hover:not(:disabled) {
+  background: var(--color-matcha-800);
+  transform: rotateZ(-8deg) translateY(-2px);
+  box-shadow: var(--shadow-hover);
+}
+
 .btn-danger {
   background: var(--color-danger);
   color: #fff;
+}
+
+.btn-danger:hover:not(:disabled) {
+  background: var(--color-pomegranate-400);
+  transform: rotateZ(-8deg) translateY(-2px);
+  box-shadow: var(--shadow-hover);
 }
 
 .btn-ghost {
@@ -212,16 +265,24 @@ button:disabled {
   color: var(--color-text-muted);
   padding: 6px 10px;
   border-radius: var(--radius-sm);
+  border: 1px solid var(--color-border);
 }
 
-.btn-ghost:hover {
-  background: var(--color-gray-bg);
-  color: var(--color-text);
+.btn-ghost:hover:not(:disabled) {
+  background: var(--color-ube-800);
+  color: #fff;
+  transform: rotateZ(-8deg) translateY(-2px);
+  box-shadow: var(--shadow-hover);
 }
 
 .btn-sm {
   font-size: 13px;
   padding: 4px 10px;
+}
+
+.btn-sm:hover:not(:disabled) {
+  transform: rotateZ(-6deg) translateY(-1px);
+  box-shadow: rgb(0,0,0) -4px 4px;
 }
 
 /* ===========================
@@ -231,16 +292,25 @@ button:disabled {
   background: var(--color-surface);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-lg);
-  padding: 20px 24px;
+  padding: 24px 32px;
   box-shadow: var(--shadow-sm);
-  margin-bottom: 20px;
+  margin-bottom: 24px;
+  transition: all var(--transition-hover);
+}
+
+.card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
 }
 
 .card-title {
-  font-size: 15px;
+  font-size: 32px;
   font-weight: 600;
   color: var(--color-text);
-  margin-bottom: 14px;
+  margin-bottom: 16px;
+  font-feature-settings: "ss01", "ss03", "ss10", "ss11", "ss12";
+  letter-spacing: -0.64px;
+  line-height: 1.1;
 }
 
 /* ===========================
@@ -251,10 +321,13 @@ button:disabled {
 }
 
 .page-title {
-  font-size: 22px;
-  font-weight: 700;
+  font-size: 44px;
+  font-weight: 600;
   color: var(--color-text);
-  margin-bottom: 20px;
+  margin-bottom: 24px;
+  font-feature-settings: "ss01", "ss03", "ss10", "ss11", "ss12";
+  letter-spacing: -0.88px;
+  line-height: 1.1;
 }
 
 .empty-message {
@@ -287,10 +360,16 @@ button:disabled {
   background: var(--color-surface);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-lg);
-  padding: 36px 40px;
+  padding: 40px 48px;
   width: 100%;
   max-width: 400px;
   text-align: center;
+  box-shadow: var(--shadow-sm);
+  transition: all var(--transition-hover);
+}
+
+.login-card:hover {
+  transform: translateY(-4px);
   box-shadow: var(--shadow-md);
 }
 
@@ -577,6 +656,12 @@ button:disabled {
   box-shadow: var(--shadow-sm);
   display: flex;
   flex-direction: column;
+  transition: all var(--transition-hover);
+}
+
+.course-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
 }
 
 .course-card-header {
@@ -891,6 +976,61 @@ button:disabled {
 .toggle-option:hover:not(.selected) {
   background: var(--color-primary-light);
   color: var(--color-primary);
+}
+
+/* Answer Queue */
+.answer-queue-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.answer-queue-item {
+  display: flex;
+  align-items: flex-start;
+  padding: 12px;
+  background: var(--color-bg);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border);
+}
+
+.answer-queue-info {
+  flex: 1;
+}
+
+.answer-queue-info p {
+  margin: 4px 0;
+  font-size: 14px;
+}
+
+/* Option buttons */
+.option-buttons {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.option-btn {
+  width: 40px;
+  height: 40px;
+  border: 2px solid var(--color-border);
+  background: var(--color-bg);
+  border-radius: var(--radius-md);
+  font-weight: bold;
+  font-size: 16px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.option-btn:hover {
+  border-color: var(--color-primary);
+  background: var(--color-primary-light);
+}
+
+.option-btn.selected {
+  background: var(--color-primary);
+  color: white;
+  border-color: var(--color-primary);
 }
 
 /* ===========================

@@ -130,6 +130,7 @@ export default function Dashboard() {
   const notifConfigsRef = useRef<Record<string, VoiceConfig>>({})
   const lessonToClassroomRef = useRef<Record<string, string>>({})
   const langRef = useRef(i18n.language)
+  const audioConfigRef = useRef({ enabled: false })
 
   useEffect(() => {
     langRef.current = i18n.language
@@ -171,6 +172,13 @@ export default function Dashboard() {
         voiceConfigsRef.current = voiceMap
       })
       .catch(() => { })
+
+    fetch('/api/audio/settings')
+      .then((r) => r.json())
+      .then((data) => {
+        audioConfigRef.current = { enabled: !!data.enabled }
+      })
+      .catch(() => { })
   }, [])
 
   useEffect(() => {
@@ -198,7 +206,13 @@ export default function Dashboard() {
   }
 
   function speak(text: string) {
-    if (!text || !window.speechSynthesis) return
+    if (!text) return
+    if (audioConfigRef.current.enabled) {
+      const audio = new Audio(`/api/audio/custom?t=${Date.now()}`)
+      audio.play().catch(() => {})
+      return
+    }
+    if (!window.speechSynthesis) return
     const utter = new SpeechSynthesisUtterance(text)
     utter.lang = langRef.current.startsWith('zh') ? 'zh-CN' : 'en-US'
     window.speechSynthesis.cancel() // stop any ongoing speech first

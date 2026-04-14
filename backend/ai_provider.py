@@ -42,6 +42,9 @@ class AIProvider:
     def answer_short(self, cover_url: str) -> str:
         raise NotImplementedError
 
+    def test_call(self, image_bytes: Optional[bytes] = None) -> str:
+        raise NotImplementedError
+
 
 class GeminiProvider(AIProvider):
 
@@ -80,15 +83,35 @@ class GeminiProvider(AIProvider):
         logger.info("Gemini raw response for short answer: %s", answer)
         return answer
 
+    def test_call(self, image_bytes: Optional[bytes] = None) -> str:
+        from google.genai import types
+        
+        contents = ["Please act as a Yuketang class assistant. Look at the image and solve the problem. If it is a choice question, reply with ONLY the correct choice letter(s). If it is a short answer, reply with ONLY the answer text. Reply with nothing else."]
+        if image_bytes:
+            contents.insert(0, types.Part.from_bytes(data=image_bytes, mime_type="image/jpeg"))
+
+        logger.info("Gemini test call: model=%s, has_image=%s", self.model, image_bytes is not None)
+        try:
+            response = self.client.models.generate_content(
+                model=self.model,
+                contents=contents,
+            )
+            result = (response.text or "").strip()
+            logger.info("Gemini test call successful: %s", result[:50] + "..." if len(result) > 50 else result)
+            return result
+        except Exception as e:
+            logger.error("Gemini test call failed: %s", str(e), exc_info=True)
+            raise
+
 
 class QwenProvider(AIProvider):
     BASE_URL = "https://api-inference.modelscope.cn/v1"
     DEFAULT_MODEL = "Qwen/Qwen3.5-397B-A17B"
 
-    def __init__(self, api_key: str, model: str = DEFAULT_MODEL):
+    def __init__(self, api_key: str, model: str = None):
         from openai import OpenAI
         self.client = OpenAI(base_url=self.BASE_URL, api_key=api_key)
-        self.model = model
+        self.model = model or self.DEFAULT_MODEL
 
     def _chat(self, cover_url: str, text: str) -> str:
         response = self.client.chat.completions.create(
@@ -113,10 +136,50 @@ class QwenProvider(AIProvider):
         logger.info("Qwen raw response for short answer: %s", answer)
         return answer
 
+    def test_call(self, image_bytes: Optional[bytes] = None) -> str:
+        import base64
+        
+        content = []
+        if image_bytes:
+            img_b64 = base64.b64encode(image_bytes).decode()
+            content.append({"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{img_b64}"}})
+        content.append({"type": "text", "text": "Please act as a Yuketang class assistant. Look at the image and solve the problem. If it is a choice question, reply with ONLY the correct choice letter(s). If it is a short answer, reply with ONLY the answer text. Reply with nothing else."})
+
+        logger.info("Qwen test call: model=%s, base_url=%s, has_image=%s", self.model, self.BASE_URL, image_bytes is not None)
+        try:
+            response = self.client.chat.completions.create(
+                model=self.model,
+                messages=[{"role": "user", "content": content}],
+            )
+            result = (response.choices[0].message.content or "").strip()
+            logger.info("Qwen test call successful: %s", result[:50] + "..." if len(result) > 50 else result)
+            return result
+        except Exception as e:
+            logger.error("Qwen test call failed: %s", str(e), exc_info=True)
+            raise
+
+
+class DashScopeProvider(QwenProvider):
+    BASE_URL = "https://dashscope.aliyuncs.com/compatible-mode/v1"
+    DEFAULT_MODEL = "qwen3.6-plus"
+
+
+class MoonshotProvider(QwenProvider):
+    BASE_URL = "https://api.moonshot.cn/v1"
+    DEFAULT_MODEL = "kimi-k2.5"
+
+    def __init__(self, api_key: str, model: str = None):
+        from openai import OpenAI
+        # Moonshot API base url and auth requires standard OpenAI setup without modelscope inference
+        self.client = OpenAI(base_url=self.BASE_URL, api_key=api_key)
+        self.model = model or self.DEFAULT_MODEL
+
 
 _PROVIDERS = {
     "google": GeminiProvider,
     "qwen": QwenProvider,
+    "dashscope": DashScopeProvider,
+    "moonshot": MoonshotProvider,
 }
 
 

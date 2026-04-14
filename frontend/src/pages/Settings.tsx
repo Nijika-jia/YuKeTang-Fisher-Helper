@@ -33,6 +33,8 @@ interface AIKeyEntry {
 const PROVIDER_LABELS: Record<string, string> = {
   google: 'Google',
   qwen: 'ModelScope',
+  dashscope: 'Aliyun DashScope',
+  moonshot: 'Moonshot (KIMI)',
 }
 
 interface AISettings {
@@ -146,12 +148,51 @@ export default function Settings() {
   const [ai, setAi] = useState<AISettings>({ keys: [], active_key: -1, fallback_keys: true })
   const [newKey, setNewKey] = useState<AIKeyEntry>({ name: '', provider: 'qwen', key: '' })
   const [addingKey, setAddingKey] = useState(false)
+  const [testingKey, setTestingKey] = useState<number | null>(null)
+  const [testImageFile, setTestImageFile] = useState<File | null>(null)
+  const [audioConfig, setAudioConfig] = useState({ enabled: false })
+  const [audioFile, setAudioFile] = useState<File | null>(null)
+  const [uploadingAudio, setUploadingAudio] = useState(false)
+  const [audioExists, setAudioExists] = useState(false)
   const [appliedAllFrom, setAppliedAllFrom] = useState<string | null>(null)
   const [defaults, setDefaults] = useState<CourseConfig | null>(null)
   const savedCoursesRef = useRef<Record<string, string>>({})
+  const [answerQueue, setAnswerQueue] = useState<Array<{page: string, answer: string, type: string}>>([])
+  const [newAnswer, setNewAnswer] = useState({page: '', answer: '', type: 'single'})
 
   const reloadAi = () =>
     fetch('/api/ai/settings').then((r) => r.json()).then(setAi).catch(() => { })
+
+  const reloadAnswerQueue = () =>
+    fetch('/api/answer/queue').then((r) => r.json()).then((data) => setAnswerQueue(data.queue)).catch(() => { })
+
+  const handleAddAnswer = async () => {
+    if (!newAnswer.page.trim() || !newAnswer.answer.trim()) return
+    try {
+      await fetch('/api/answer/queue', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(newAnswer),
+      })
+      setNewAnswer({ page: '', answer: '', type: 'single' })
+      await reloadAnswerQueue()
+    } catch { }
+  }
+
+  const handleRemoveAnswer = async (index: number) => {
+    try {
+      await fetch(`/api/answer/queue/${index}`, { method: 'DELETE' })
+      await reloadAnswerQueue()
+    } catch { }
+  }
+
+  const handleClearQueue = async () => {
+    if (answerQueue.length === 0) return
+    try {
+      await fetch('/api/answer/queue', { method: 'DELETE' })
+      await reloadAnswerQueue()
+    } catch { }
+  }
 
   useEffect(() => {
     Promise.all([
@@ -159,8 +200,11 @@ export default function Settings() {
       fetch('/api/courses/settings').then((r) => r.json()),
       fetch('/api/ai/settings').then((r) => r.json()),
       fetch('/api/courses/defaults').then((r) => r.json()),
+      fetch('/api/audio/settings').then((r) => r.json()),
+      fetch('/api/audio/exists').then((r) => r.json()),
+      fetch('/api/answer/queue').then((r) => r.json()),
     ])
-      .then(([allCourses, settings, aiSettings, defs]: [CourseItem[], CoursesMap, AISettings, CourseConfig]) => {
+      .then(([allCourses, settings, aiSettings, defs, audioSet, audioExistsData, answerQueueData]) => {
         setDefaults(defs)
         const built = buildCourseStates(allCourses, settings, defs)
         setCourses(built)
@@ -168,6 +212,9 @@ export default function Settings() {
         for (const c of built) snap[c.courseId] = courseFingerprint(c)
         savedCoursesRef.current = snap
         setAi(aiSettings)
+        setAudioConfig({ enabled: !!audioSet.enabled })
+        setAudioExists(!!audioExistsData.exists)
+        setAnswerQueue(answerQueueData.queue || [])
       })
       .catch(() => { })
       .finally(() => setLoading(false))
@@ -219,6 +266,67 @@ export default function Settings() {
       body: JSON.stringify({ fallback_keys: enabled }),
     })
     await reloadAi()
+  }
+
+  const handleTestKey = async (index: number) => {
+    const entry = ai.keys[index]
+    setTestingKey(index)
+    try {
+      const formData = new FormData()
+      formData.append('provider', entry.provider)
+      formData.append('key_index', index.toString())
+      if (testImageFile) {
+        formData.append('image', testImageFile)
+      }
+      
+      const resp = await fetch('/api/ai/test', {
+        method: 'POST',
+        body: formData,
+      })
+      const data = await resp.json()
+      if (data.ok) {
+        alert(t('settings.testSuccess') + ':\n' + data.message)
+      } else {
+        alert(t('settings.testFailed') + ':\n' + data.error)
+      }
+    } catch (e: any) {
+      alert(t('settings.testFailed') + ':\n' + e.message)
+    } finally {
+      setTestingKey(null)
+    }
+  }
+
+  const handleAudioUpload = async () => {
+    if (!audioFile) return
+    setUploadingAudio(true)
+    const formData = new FormData()
+    formData.append('file', audioFile)
+    try {
+      const resp = await fetch('/api/audio/upload', {
+        method: 'POST',
+        body: formData,
+      })
+      if (resp.ok) {
+        alert(t('settings.uploadSuccess') || 'Upload successful')
+        setAudioFile(null)
+        setAudioExists(true)
+      } else {
+        alert(t('settings.uploadFailed') || 'Upload failed')
+      }
+    } catch (e: any) {
+      alert((t('settings.uploadFailed') || 'Upload failed') + ': ' + e.message)
+    } finally {
+      setUploadingAudio(false)
+    }
+  }
+
+  const handleAudioToggle = async (enabled: boolean) => {
+    setAudioConfig({ enabled })
+    await fetch('/api/audio/settings', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ enabled }),
+    })
   }
 
   const updateField = <K extends keyof CourseConfig>(
@@ -357,7 +465,10 @@ export default function Settings() {
       { value: 'random', label: t('settings.random') },
       { value: 'off', label: t('settings.disabled') },
     ]
-    if (hasAi) opts.splice(1, 0, { value: 'ai', label: 'AI' })
+    if (hasAi) {
+      opts.splice(1, 0, { value: 'ai', label: 'AI' })
+      opts.splice(1, 0, { value: 'queue', label: t('settings.answerQueue') || 'Answer Queue' })
+    }
     return opts
   }
 
@@ -380,31 +491,61 @@ export default function Settings() {
 
         <div className="card">
           {ai.keys.length > 0 && (
-            <div className="ai-key-list">
-              {ai.keys.map((entry, idx) => (
-                <div key={idx} className={`ai-key-item ${idx === ai.active_key ? 'ai-key-active' : ''}`}>
-                  <div className="ai-key-info">
-                    <span className="ai-key-name">{entry.name}</span>
-                    <span className="ai-key-provider">{PROVIDER_LABELS[entry.provider] ?? entry.provider}</span>
-                    <span className="ai-key-masked">{entry.key}</span>
-                  </div>
-                  <div className="ai-key-actions">
-                    <button
-                      className={`btn btn-sm ${idx === ai.active_key ? 'btn-success' : 'btn-secondary'}`}
-                      onClick={() => handleSetActiveKey(idx)}
-                    >
-                      {idx === ai.active_key ? t('settings.inUse') : t('settings.use')}
-                    </button>
-                    <button
-                      className="btn btn-sm btn-danger"
-                      onClick={() => handleDeleteKey(idx)}
-                    >
-                      {t('settings.delete')}
-                    </button>
-                  </div>
+            <>
+              <div className="form-row" style={{ padding: '0 16px', marginBottom: 16 }}>
+                <div style={{ flex: 1 }}>
+                  <label className="form-label">{t('settings.testImagePlaceholder') || 'Upload test image'} *</label>
+                  <p className="form-help" style={{ fontSize: '12px', color: '#666', marginTop: '4px', marginBottom: '8px' }}>
+                    {t('settings.testImageHint') || 'Please upload an image containing a question for AI testing. Image is required.'}
+                  </p>
+                  <input
+                    type="file"
+                    className="form-input"
+                    accept="image/*"
+                    onChange={(e) => {
+                      if (e.target.files && e.target.files.length > 0) {
+                        setTestImageFile(e.target.files[0])
+                      } else {
+                        setTestImageFile(null)
+                      }
+                    }}
+                  />
                 </div>
-              ))}
-            </div>
+              </div>
+
+              <div className="ai-key-list">
+                {ai.keys.map((entry, idx) => (
+                  <div key={idx} className={`ai-key-item ${idx === ai.active_key ? 'ai-key-active' : ''}`}>
+                    <div className="ai-key-info">
+                      <span className="ai-key-name">{entry.name}</span>
+                      <span className="ai-key-provider">{PROVIDER_LABELS[entry.provider] ?? entry.provider}</span>
+                      <span className="ai-key-masked">{entry.key}</span>
+                    </div>
+                    <div className="ai-key-actions">
+                      <button
+                        className={`btn btn-sm ${idx === ai.active_key ? 'btn-success' : 'btn-secondary'}`}
+                        onClick={() => handleSetActiveKey(idx)}
+                      >
+                        {idx === ai.active_key ? t('settings.inUse') : t('settings.use')}
+                      </button>
+                      <button
+                        className="btn btn-sm btn-primary"
+                        onClick={() => handleTestKey(idx)}
+                        disabled={testingKey === idx || !testImageFile}
+                      >
+                        {testingKey === idx ? t('settings.testing') || 'Testing...' : t('settings.test') || 'Test'}
+                      </button>
+                      <button
+                        className="btn btn-sm btn-danger"
+                        onClick={() => handleDeleteKey(idx)}
+                      >
+                        {t('settings.delete')}
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </>
           )}
 
           {ai.keys.length > 1 && (
@@ -446,6 +587,8 @@ export default function Settings() {
               >
                 <option value="google">Google</option>
                 <option value="qwen">ModelScope</option>
+                <option value="dashscope">Aliyun DashScope</option>
+                <option value="moonshot">Moonshot (KIMI)</option>
               </select>
               <input
                 type="password"
@@ -461,6 +604,188 @@ export default function Settings() {
               disabled={addingKey || !newKey.name.trim() || !newKey.key.trim()}
             >
               {addingKey ? t('settings.applying') : t('settings.addKey')}
+            </button>
+          </div>
+        </div>
+      </section>
+
+      {/* Answer Queue Settings */}
+      <section className="settings-section">
+        <h2 className="settings-section-title">{t('settings.answerQueue') || 'Answer Queue'}</h2>
+        <div className="card">
+          <div className="form-row">
+            <label className="form-label">{t('settings.pptPage') || 'PPT Page'}</label>
+            <input
+              type="text"
+              className="form-input"
+              placeholder={t('settings.enterPptPage') || 'Enter PPT page number (e.g., 5)'}
+              value={newAnswer.page}
+              onChange={(e) => setNewAnswer({...newAnswer, page: e.target.value})}
+            />
+          </div>
+          <div className="form-row">
+            <label className="form-label">{t('settings.questionType') || 'Question Type'}</label>
+            <select
+              className="form-input"
+              value={newAnswer.type}
+              onChange={(e) => {
+                const newType = e.target.value;
+                // Reset answer when changing question type
+                if (newType === 'short') {
+                  setNewAnswer({...newAnswer, type: newType, answer: ''});
+                } else {
+                  setNewAnswer({...newAnswer, type: newType, answer: ''});
+                }
+              }}
+            >
+              <option value="single">{t('settings.singleChoice') || 'Single Choice'}</option>
+              <option value="multiple">{t('settings.multipleChoice') || 'Multiple Choice'}</option>
+              <option value="short">{t('settings.shortAnswer') || 'Short Answer'}</option>
+            </select>
+          </div>
+          
+          {/* Choice options for single and multiple choice */}
+          {newAnswer.type !== 'short' && (
+            <div className="form-row">
+              <label className="form-label">{t('settings.answer') || 'Answer'}</label>
+              <div className="option-buttons">
+                {['A', 'B', 'C', 'D', 'E', 'F'].map((option) => (
+                  <button
+                    key={option}
+                    className={`option-btn ${newAnswer.type === 'single' && newAnswer.answer === option ? 'selected' : ''} ${newAnswer.type === 'multiple' && newAnswer.answer.split(',').includes(option) ? 'selected' : ''}`}
+                    onClick={() => {
+                      if (newAnswer.type === 'single') {
+                        setNewAnswer({...newAnswer, answer: option});
+                      } else {
+                        const currentAnswers = newAnswer.answer ? newAnswer.answer.split(',') : [];
+                        const newAnswers = currentAnswers.includes(option)
+                          ? currentAnswers.filter(a => a !== option)
+                          : [...currentAnswers, option].sort();
+                        setNewAnswer({...newAnswer, answer: newAnswers.join(',')});
+                      }
+                    }}
+                  >
+                    {option}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+          
+          {/* Text input for short answer */}
+          {newAnswer.type === 'short' && (
+            <div className="form-row">
+              <label className="form-label">{t('settings.answer') || 'Answer'}</label>
+              <input
+                type="text"
+                className="form-input"
+                placeholder={t('settings.enterAnswer') || 'Enter answer text'}
+                value={newAnswer.answer}
+                onChange={(e) => setNewAnswer({...newAnswer, answer: e.target.value})}
+              />
+            </div>
+          )}
+          <div className="form-row">
+            <button
+              className="btn btn-primary"
+              onClick={handleAddAnswer}
+              disabled={!newAnswer.page.trim() || !newAnswer.answer.trim()}
+            >
+              {t('settings.addToQueue') || 'Add to Queue'}
+            </button>
+            <button
+              className="btn btn-danger"
+              onClick={handleClearQueue}
+              disabled={answerQueue.length === 0}
+              style={{ marginLeft: '10px' }}
+            >
+              {t('settings.clearQueue') || 'Clear Queue'}
+            </button>
+          </div>
+          
+          {answerQueue.length > 0 && (
+            <div style={{ marginTop: '20px' }}>
+              <h3>{t('settings.queueItems') || 'Queue Items'} ({answerQueue.length})</h3>
+              <div className="answer-queue-list">
+                {answerQueue.map((item, idx) => (
+                  <div key={idx} className="answer-queue-item">
+                    <div className="answer-queue-info">
+                      <p><strong>{t('settings.pptPage') || 'PPT Page'}:</strong> {item.page}</p>
+                      <p><strong>{t('settings.questionType') || 'Question Type'}:</strong> {
+                        item.type === 'single' ? (t('settings.singleChoice') || 'Single Choice') :
+                        item.type === 'multiple' ? (t('settings.multipleChoice') || 'Multiple Choice') :
+                        (t('settings.shortAnswer') || 'Short Answer')
+                      }</p>
+                      <p><strong>{t('settings.answer') || 'Answer'}:</strong> {item.answer}</p>
+                    </div>
+                    <button
+                      className="btn btn-sm btn-danger"
+                      onClick={() => handleRemoveAnswer(idx)}
+                    >
+                      {t('settings.remove') || 'Remove'}
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      </section>
+
+      {/* Custom Audio Settings */}
+      <section className="settings-section">
+        <h2 className="settings-section-title">{t('settings.customAudioSettings') || 'Custom Audio Notification'}</h2>
+        <div className="card">
+          <div className="form-row">
+            <label className="form-label">{t('settings.enableCustomAudio') || 'Enable Custom Audio (Overrides TTS)'}</label>
+            <div className="toggle-group">
+              <button
+                className={`toggle-option ${audioConfig.enabled ? 'selected' : ''}`}
+                onClick={() => handleAudioToggle(true)}
+              >
+                {t('common.on')}
+              </button>
+              <button
+                className={`toggle-option ${!audioConfig.enabled ? 'selected' : ''}`}
+                onClick={() => handleAudioToggle(false)}
+              >
+                {t('common.off')}
+              </button>
+            </div>
+          </div>
+          <div className="ai-add-form" style={{ marginTop: '16px' }}>
+            <div className="ai-add-fields">
+              <input
+                type="file"
+                className="form-input"
+                accept=".mp3,.wav,.ogg,.m4a"
+                onChange={(e) => {
+                  if (e.target.files && e.target.files.length > 0) {
+                    setAudioFile(e.target.files[0])
+                  }
+                }}
+              />
+            </div>
+            {audioExists && !audioFile && (
+              <div className="audio-status" style={{ marginBottom: '8px', padding: '8px', backgroundColor: '#e8f5e9', borderRadius: '4px', color: '#2e7d32' }}>
+                ✓ {t('settings.audioUploaded') || 'Audio file uploaded'}
+              </div>
+            )}
+            <button
+              className="btn btn-primary"
+              onClick={handleAudioUpload}
+              disabled={uploadingAudio || !audioFile}
+            >
+              {uploadingAudio ? t('settings.uploading') || 'Uploading...' : t('settings.upload') || 'Upload Audio'}
+            </button>
+            <button
+              className="btn btn-secondary"
+              onClick={() => {
+                const audio = new Audio(`/api/audio/custom?t=${Date.now()}`)
+                audio.play().catch((e) => alert('No custom audio found or play failed: ' + e.message))
+              }}
+            >
+              {t('settings.testAudio') || 'Play/Test'}
             </button>
           </div>
         </div>

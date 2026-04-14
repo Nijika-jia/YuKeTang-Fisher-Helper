@@ -28,7 +28,7 @@ from Crypto.PublicKey import RSA as CryptoRSA
 from Crypto.Cipher import PKCS1_v1_5
 
 import websocket
-from fastapi import FastAPI, WebSocket, WebSocketDisconnect
+from fastapi import FastAPI, WebSocket, WebSocketDisconnect, UploadFile, File, Form
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
@@ -38,6 +38,7 @@ import event_log
 from config import (
     get_config, save_config, get_course_config, update_course_config,
     get_ai_config, update_ai_config,
+    get_audio_config, update_audio_config, STORE_DIR,
     get_domain, set_domain,
     make_headers, api_url, http_request,
     DEFAULT_COURSE_CONFIG, DOMAIN_OPTIONS,
@@ -144,6 +145,18 @@ async def _broadcast_events():
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     loop = asyncio.get_event_loop()
+
+    audio_dir = STORE_DIR / "audio"
+    if audio_dir.exists():
+        for f in audio_dir.iterdir():
+            try:
+                f.unlink()
+            except:
+                pass
+        try:
+            audio_dir.rmdir()
+        except:
+            pass
 
     broadcaster = asyncio.create_task(_broadcast_events())
 
@@ -498,6 +511,45 @@ async def update_course_settings(course_id: str, body: CourseConfig):
 # ---------------------------------------------------------------------------
 
 
+@app.post("/api/ai/test")
+async def test_ai_key(provider: str = Form(...), key: Optional[str] = Form(None), key_index: Optional[int] = Form(None), image: UploadFile = File(...)):
+    # Get key from index if provided
+    if key_index is not None:
+        cfg = get_ai_config()
+        if key_index >= len(cfg["keys"]):
+            return {"ok": False, "error": "Invalid key index"}
+        key_entry = cfg["keys"][key_index]
+        key = key_entry["key"]
+        provider = key_entry["provider"]
+        _logger.info("Testing AI provider: %s using key index: %d", provider, key_index)
+    else:
+        if not provider or not key:
+            return {"ok": False, "error": "Missing provider or key"}
+        _logger.info("Testing AI provider: %s, key length: %d", provider, len(key))
+    
+    # Require image for testing
+    if not image:
+        return {"ok": False, "error": "Image is required for testing"}
+    
+    from ai_provider import create_provider
+    try:
+        ai_client = create_provider(provider, key)
+        if not ai_client:
+            _logger.error("Failed to create provider: %s", provider)
+            return {"ok": False, "error": "Invalid provider"}
+        
+        image_bytes = await image.read()
+        _logger.info("Test image size: %d bytes", len(image_bytes))
+
+        _logger.info("Calling test_call for provider: %s", provider)
+        result = ai_client.test_call(image_bytes=image_bytes)
+        _logger.info("Test successful: %s", result[:100] + "..." if len(result) > 100 else result)
+        return {"ok": True, "message": result}
+    except Exception as e:
+        _logger.error("AI test failed: %s", str(e), exc_info=True)
+        return {"ok": False, "error": str(e)}
+
+
 @app.get("/api/ai/settings")
 async def get_ai_settings():
     cfg = get_ai_config()
@@ -547,6 +599,86 @@ async def set_active_ai_key(body: AIActiveKey):
 async def set_ai_fallback(body: dict):
     update_ai_config({"fallback_keys": bool(body.get("fallback_keys", True))})
     return {"ok": True}
+
+
+# ---------------------------------------------------------------------------
+# Answer Queue routes
+# ---------------------------------------------------------------------------
+
+
+@app.get("/api/answer/queue")
+async def get_answer_queue():
+    from config import get_answer_queue as get_queue
+    queue = get_queue()
+    return {"queue": queue}
+
+
+@app.post("/api/answer/queue")
+async def add_to_answer_queue(body: dict):
+    from config import add_answer_to_queue
+    add_answer_to_queue(body)
+    return {"ok": True}
+
+
+@app.delete("/api/answer/queue/{index}")
+async def remove_from_answer_queue(index: int):
+    from config import remove_answer_from_queue
+    remove_answer_from_queue(index)
+    return {"ok": True}
+
+
+@app.delete("/api/answer/queue")
+async def clear_answer_queue():
+    from config import clear_answer_queue
+    clear_answer_queue()
+    return {"ok": True}
+
+
+# ---------------------------------------------------------------------------
+# Audio settings routes
+# ---------------------------------------------------------------------------
+
+@app.get("/api/audio/settings")
+async def get_audio_settings_endpoint():
+    return get_audio_config()
+
+
+@app.put("/api/audio/settings")
+async def update_audio_settings_endpoint(body: dict):
+    update_audio_config({"enabled": bool(body.get("enabled", False))})
+    return {"ok": True}
+
+
+@app.post("/api/audio/upload")
+async def upload_audio(file: UploadFile = File(...)):
+    if not file.filename:
+        return {"ok": False, "error": "No file"}
+    ext = Path(file.filename).suffix
+    if ext.lower() not in [".mp3", ".wav", ".ogg", ".m4a"]:
+        return {"ok": False, "error": "Unsupported file type"}
+    
+    save_path = STORE_DIR / "custom_audio"
+    with open(save_path, "wb") as f:
+        f.write(await file.read())
+    
+    return {"ok": True}
+
+
+@app.get("/api/audio/custom")
+async def get_custom_audio():
+    save_path = STORE_DIR / "custom_audio"
+    if save_path.exists():
+        from fastapi.responses import FileResponse
+        return FileResponse(save_path, media_type="audio/mpeg")
+    from fastapi.responses import JSONResponse
+    return JSONResponse(status_code=404, content={"ok": False, "error": "No custom audio"})
+
+@app.get("/api/audio/exists")
+async def check_audio_exists():
+    save_path = STORE_DIR / "custom_audio"
+    if save_path.exists():
+        return {"exists": True}
+    return {"exists": False}
 
 
 # ---------------------------------------------------------------------------

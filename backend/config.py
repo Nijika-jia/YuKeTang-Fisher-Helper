@@ -36,6 +36,7 @@ STORE_DIR = _get_base_dir() / "store"
 STORE_DIR.mkdir(parents=True, exist_ok=True)
 
 _CONFIG_PATH = STORE_DIR / "config.json"
+_ANSWER_QUEUE_PATH = STORE_DIR / "answer_queue.json"
 
 DEFAULT_COURSE_CONFIG: dict = {
     "type1": "ai",
@@ -73,6 +74,10 @@ DEFAULT_AI_CONFIG: dict = {
     "fallback_keys": True,
 }
 
+DEFAULT_AUDIO_CONFIG: dict = {
+    "enabled": False,
+}
+
 DOMAIN_OPTIONS = [
     {"key": "www.yuketang.cn", "label": "Yuketang", "label_zh": "雨课堂"},
     {"key": "pro.yuketang.cn", "label": "Hetang Yuketang", "label_zh": "荷塘雨课堂"},
@@ -82,7 +87,7 @@ DOMAIN_OPTIONS = [
 
 DEFAULT_DOMAIN = "pro.yuketang.cn"
 
-_EMPTY_CONFIG = {"sessionid": "", "domain": DEFAULT_DOMAIN, "user": {}, "course_list": [], "courses": {}, "ai": dict(DEFAULT_AI_CONFIG)}
+_EMPTY_CONFIG = {"sessionid": "", "domain": DEFAULT_DOMAIN, "user": {}, "course_list": [], "courses": {}, "ai": dict(DEFAULT_AI_CONFIG), "audio": dict(DEFAULT_AUDIO_CONFIG)}
 
 
 def get_config() -> dict:
@@ -155,6 +160,56 @@ def update_ai_config(data: dict) -> None:
     ai = cfg.setdefault("ai", dict(DEFAULT_AI_CONFIG))
     ai.update(data)
     save_config(cfg)
+
+
+def get_audio_config() -> dict:
+    cfg = get_config()
+    audio = cfg.get("audio", {})
+    merged = dict(DEFAULT_AUDIO_CONFIG)
+    merged.update(audio)
+    return merged
+
+
+def update_audio_config(data: dict) -> None:
+    cfg = get_config()
+    audio = cfg.setdefault("audio", dict(DEFAULT_AUDIO_CONFIG))
+    audio.update(data)
+    save_config(cfg)
+
+
+def get_answer_queue() -> list:
+    """Get the answer queue."""
+    if not _ANSWER_QUEUE_PATH.exists():
+        save_answer_queue([])
+        return []
+    with open(_ANSWER_QUEUE_PATH, "r", encoding="utf-8") as f:
+        return json.load(f)
+
+
+def save_answer_queue(queue: list) -> None:
+    """Save the answer queue."""
+    with open(_ANSWER_QUEUE_PATH, "w", encoding="utf-8") as f:
+        json.dump(queue, f, ensure_ascii=False, indent=2)
+
+
+def add_answer_to_queue(answer: dict) -> None:
+    """Add an answer to the queue."""
+    queue = get_answer_queue()
+    queue.append(answer)
+    save_answer_queue(queue)
+
+
+def remove_answer_from_queue(index: int) -> None:
+    """Remove an answer from the queue by index."""
+    queue = get_answer_queue()
+    if 0 <= index < len(queue):
+        queue.pop(index)
+        save_answer_queue(queue)
+
+
+def clear_answer_queue() -> None:
+    """Clear the answer queue."""
+    save_answer_queue([])
 
 
 def get_domain() -> str:
