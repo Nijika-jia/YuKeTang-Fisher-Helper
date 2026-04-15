@@ -7,8 +7,8 @@ from typing import Any, Callable, Dict, List, Optional
 
 import websocket
 
-from ai_provider import AIProvider, create_provider
-from config import api_url, http_request, get_active_ai_key, get_ai_config, get_all_ai_keys, get_config, make_headers, get_answer_queue, remove_answer_from_queue
+from ai_provider import AIProvider, create_provider_from_entry
+from config import api_url, http_request, get_active_ai_key_entry, get_ai_config, get_all_ai_key_entries, get_config, make_headers, get_answer_queue, remove_answer_from_queue
 
 logger = logging.getLogger(__name__)
 
@@ -218,37 +218,38 @@ class Lesson:
             return random.sample(options, min(count, len(options)))
 
     def _get_ai_provider(self) -> Optional[AIProvider]:
-        provider_name, api_key = get_active_ai_key()
-        return create_provider(provider_name, api_key)
+        entry = get_active_ai_key_entry()
+        return create_provider_from_entry(entry) if entry else None
 
     def _build_ai_answers(self, problem: dict) -> list | str:
         ai_cfg = get_ai_config()
         fallback = ai_cfg.get("fallback_keys", True)
 
         if fallback:
-            keys_to_try = get_all_ai_keys()
+            entries_to_try = get_all_ai_key_entries()
         else:
-            provider_name, api_key = get_active_ai_key()
-            keys_to_try = [(provider_name, api_key)] if api_key else []
+            entry = get_active_ai_key_entry()
+            entries_to_try = [entry] if entry and entry.get("key") else []
 
-        if not keys_to_try:
+        if not entries_to_try:
             raise RuntimeError("No AI provider available")
 
         cover_url = problem.get("_cover", "")
         problemtype = problem["problemType"]
         last_error = None
 
-        for provider_name, api_key in keys_to_try:
-            provider = create_provider(provider_name, api_key)
+        for entry in entries_to_try:
+            provider = create_provider_from_entry(entry)
             if not provider:
                 continue
+            label = entry.get("provider", "?")
             try:
                 if problemtype == 5:
                     return provider.answer_short(cover_url)
                 else:
                     return provider.answer_choice(cover_url, [opt["key"] for opt in problem["options"]], problemtype)
             except Exception as e:
-                logger.warning("AI call failed with %s key, trying next: %s", provider_name, e)
+                logger.warning("AI call failed with %s key, trying next: %s", label, e)
                 last_error = e
 
         raise RuntimeError("All AI providers failed") from last_error

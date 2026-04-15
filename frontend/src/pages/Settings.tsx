@@ -28,6 +28,8 @@ interface AIKeyEntry {
   name: string
   provider: string
   key: string
+  base_url?: string
+  model?: string
 }
 
 const PROVIDER_LABELS: Record<string, string> = {
@@ -35,6 +37,7 @@ const PROVIDER_LABELS: Record<string, string> = {
   qwen: 'ModelScope',
   dashscope: 'Aliyun DashScope',
   moonshot: 'Moonshot (KIMI)',
+  openai_compat: 'OpenAI-compatible',
 }
 
 interface AISettings {
@@ -146,7 +149,13 @@ export default function Settings() {
   const [courses, setCourses] = useState<CourseState[]>([])
   const [loading, setLoading] = useState(true)
   const [ai, setAi] = useState<AISettings>({ keys: [], active_key: -1, fallback_keys: true })
-  const [newKey, setNewKey] = useState<AIKeyEntry>({ name: '', provider: 'qwen', key: '' })
+  const [newKey, setNewKey] = useState<AIKeyEntry>({
+    name: '',
+    provider: 'qwen',
+    key: '',
+    base_url: '',
+    model: '',
+  })
   const [addingKey, setAddingKey] = useState(false)
   const [testingKey, setTestingKey] = useState<number | null>(null)
   const [testImageFile, setTestImageFile] = useState<File | null>(null)
@@ -231,15 +240,27 @@ export default function Settings() {
 
   const handleAddKey = async () => {
     if (!newKey.name.trim() || !newKey.key.trim()) return
+    if (newKey.provider === 'openai_compat') {
+      if (!newKey.base_url?.trim() || !newKey.model?.trim()) return
+    }
     setAddingKey(true)
     try {
+      const payload: Record<string, string> = {
+        name: newKey.name.trim(),
+        provider: newKey.provider,
+        key: newKey.key.trim(),
+      }
+      if (newKey.provider === 'openai_compat') {
+        payload.base_url = newKey.base_url!.trim()
+        payload.model = newKey.model!.trim()
+      }
       const resp = await fetch('/api/ai/keys', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(newKey),
+        body: JSON.stringify(payload),
       })
       if (!resp.ok) throw new Error('Add failed')
-      setNewKey({ name: '', provider: 'qwen', key: '' })
+      setNewKey({ name: '', provider: 'qwen', key: '', base_url: '', model: '' })
       await reloadAi()
     } catch { }
     setAddingKey(false)
@@ -518,7 +539,19 @@ export default function Settings() {
                   <div key={idx} className={`ai-key-item ${idx === ai.active_key ? 'ai-key-active' : ''}`}>
                     <div className="ai-key-info">
                       <span className="ai-key-name">{entry.name}</span>
-                      <span className="ai-key-provider">{PROVIDER_LABELS[entry.provider] ?? entry.provider}</span>
+                      <span className="ai-key-provider">
+                        {entry.provider === 'openai_compat'
+                          ? t('settings.openaiCompat')
+                          : (PROVIDER_LABELS[entry.provider] ?? entry.provider)}
+                        {entry.provider === 'openai_compat' && entry.model
+                          ? ` · ${entry.model}`
+                          : ''}
+                      </span>
+                      {entry.provider === 'openai_compat' && entry.base_url && (
+                        <span className="ai-key-meta" style={{ fontSize: 12, opacity: 0.85 }}>
+                          {entry.base_url}
+                        </span>
+                      )}
                       <span className="ai-key-masked">{entry.key}</span>
                     </div>
                     <div className="ai-key-actions">
@@ -571,40 +604,93 @@ export default function Settings() {
             </div>
           )}
 
-          <div className="ai-add-form">
-            <div className="ai-add-fields">
-              <input
-                type="text"
-                className="form-input"
-                value={newKey.name}
-                placeholder={t('settings.keyNamePlaceholder')}
-                onChange={(e) => setNewKey({ ...newKey, name: e.target.value })}
-              />
-              <select
-                className="form-select"
-                value={newKey.provider}
-                onChange={(e) => setNewKey({ ...newKey, provider: e.target.value })}
-              >
-                <option value="google">Google</option>
-                <option value="qwen">ModelScope</option>
-                <option value="dashscope">Aliyun DashScope</option>
-                <option value="moonshot">Moonshot (KIMI)</option>
-              </select>
-              <input
-                type="password"
-                className="form-input"
-                value={newKey.key}
-                placeholder={t('settings.apiKeyPlaceholder')}
-                onChange={(e) => setNewKey({ ...newKey, key: e.target.value })}
-              />
-            </div>
-            <button
-              className="btn btn-primary"
-              onClick={handleAddKey}
-              disabled={addingKey || !newKey.name.trim() || !newKey.key.trim()}
+          <div
+            className="ai-add-form"
+            style={
+              newKey.provider === 'openai_compat'
+                ? { flexDirection: 'column', alignItems: 'stretch' }
+                : undefined
+            }
+          >
+            <div
+              style={{
+                display: 'flex',
+                gap: 10,
+                alignItems: 'center',
+                width: '100%',
+                flexWrap: 'wrap',
+              }}
             >
-              {addingKey ? t('settings.applying') : t('settings.addKey')}
-            </button>
+              <div className="ai-add-fields" style={{ flex: 1, minWidth: 0 }}>
+                <input
+                  type="text"
+                  className="form-input"
+                  value={newKey.name}
+                  placeholder={t('settings.keyNamePlaceholder')}
+                  onChange={(e) => setNewKey({ ...newKey, name: e.target.value })}
+                />
+                <select
+                  className="form-select"
+                  value={newKey.provider}
+                  onChange={(e) => {
+                    const provider = e.target.value
+                    setNewKey({
+                      ...newKey,
+                      provider,
+                      base_url: provider === 'openai_compat' ? newKey.base_url || '' : '',
+                      model: provider === 'openai_compat' ? newKey.model || '' : '',
+                    })
+                  }}
+                >
+                  <option value="google">Google</option>
+                  <option value="qwen">ModelScope</option>
+                  <option value="dashscope">Aliyun DashScope</option>
+                  <option value="moonshot">Moonshot (KIMI)</option>
+                  <option value="openai_compat">{t('settings.openaiCompat')}</option>
+                </select>
+                <input
+                  type="password"
+                  className="form-input"
+                  value={newKey.key}
+                  placeholder={t('settings.apiKeyPlaceholder')}
+                  onChange={(e) => setNewKey({ ...newKey, key: e.target.value })}
+                />
+              </div>
+              <button
+                className="btn btn-primary"
+                style={{ flexShrink: 0 }}
+                onClick={handleAddKey}
+                disabled={
+                  addingKey
+                  || !newKey.name.trim()
+                  || !newKey.key.trim()
+                  || (newKey.provider === 'openai_compat'
+                    && (!newKey.base_url?.trim() || !newKey.model?.trim()))
+                }
+              >
+                {addingKey ? t('settings.applying') : t('settings.addKey')}
+              </button>
+            </div>
+            {newKey.provider === 'openai_compat' && (
+              <div className="ai-add-fields" style={{ width: '100%', marginTop: 8 }}>
+                <input
+                  type="text"
+                  className="form-input"
+                  value={newKey.base_url ?? ''}
+                  placeholder={t('settings.openaiBaseUrlPlaceholder')}
+                  onChange={(e) => setNewKey({ ...newKey, base_url: e.target.value })}
+                  autoComplete="off"
+                />
+                <input
+                  type="text"
+                  className="form-input"
+                  value={newKey.model ?? ''}
+                  placeholder={t('settings.openaiModelPlaceholder')}
+                  onChange={(e) => setNewKey({ ...newKey, model: e.target.value })}
+                  autoComplete="off"
+                />
+              </div>
+            )}
           </div>
         </div>
       </section>
