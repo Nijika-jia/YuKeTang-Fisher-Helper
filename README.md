@@ -21,9 +21,7 @@
 
 ## 快速开始
 
-### 方式一：源代码 Python 启动（推荐）
-
-#### 自动初始化（推荐）
+### 自动初始化（推荐）
 1. 下载源代码 ZIP并解压，或使用 Git Clone
 ```zsh
 git clone https://github.com/Nijika-jia/YuKeTang-Fisher-Helper.git
@@ -34,7 +32,7 @@ git clone https://github.com/Nijika-jia/YuKeTang-Fisher-Helper.git
    run.bat
 4. 在浏览器中打开 <http://localhost:8500> 即可使用
 
-#### 手动初始化
+### 手动初始化
 1. 下载源代码 ZIP并解压，或使用 Git Clone
 ```zsh
 git clone https://github.com/Nijika-jia/YuKeTang-Fisher-Helper.git
