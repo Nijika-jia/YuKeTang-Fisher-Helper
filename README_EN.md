@@ -21,9 +21,7 @@
 
 ## Quick Start
 
-### Option 1: Python from Source (Recommended)
-
-#### Auto Initialization (Recommended)
+### Auto Initialization (Recommended)
 1. Download source code ZIP and extract, or use Git Clone
 ```zsh
 git clone https://github.com/Nijika-jia/YuKeTang-Fisher-Helper.git
@@ -34,7 +32,7 @@ git clone https://github.com/Nijika-jia/YuKeTang-Fisher-Helper.git
    run.bat
 4. Open <http://localhost:8500> in your browser to use the app
 
-#### Manual Initialization
+### Manual Initialization
 1. Download source code ZIP and extract, or use Git Clone
 ```zsh
 git clone https://github.com/Nijika-jia/YuKeTang-Fisher-Helper.git
