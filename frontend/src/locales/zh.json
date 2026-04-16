@@ -108,7 +108,8 @@
     "addToQueue": "添加到队列",
     "clearQueue": "清空队列",
     "queueItems": "队列项目",
-    "remove": "删除"
+    "remove": "删除",
+    "actions": "操作"
   },
   "events": {
     "signin": "签到",

@@ -9,6 +9,7 @@ node_modules/
 # Usage
 api_usage_example/
 note.md
+DESIGN.md
 
 # Config & data
 store/

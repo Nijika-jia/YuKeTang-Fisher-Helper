@@ -1034,6 +1034,84 @@ button:disabled {
 }
 
 /* ===========================
+   Answer Queue Table
+   =========================== */
+.answer-queue-table {
+  width: 100%;
+  border-collapse: collapse;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  box-shadow: var(--shadow-sm);
+}
+
+.answer-queue-table-header {
+  display: flex;
+  background-color: var(--color-bg);
+  font-weight: 600;
+  border-bottom: 2px solid var(--color-border);
+}
+
+.answer-queue-table-body {
+  display: flex;
+  flex-direction: column;
+}
+
+.answer-queue-table-row {
+  display: flex;
+  border-bottom: 1px solid var(--color-border);
+  transition: background-color 0.2s;
+}
+
+.answer-queue-table-row:nth-child(even) {
+  background-color: var(--color-bg);
+}
+
+.answer-queue-table-row:hover {
+  background-color: color-mix(in srgb, var(--color-primary) 5%, var(--color-surface));
+}
+
+.answer-queue-table-row:last-child {
+  border-bottom: none;
+}
+
+.answer-queue-table-cell {
+  padding: 12px;
+  flex: 1;
+  text-align: left;
+  font-size: 14px;
+}
+
+.answer-queue-table-cell:first-child {
+  flex: 0 0 100px;
+}
+
+.answer-queue-table-cell:nth-child(2) {
+  flex: 0 0 150px;
+}
+
+.answer-queue-table-cell:nth-child(3) {
+  flex: 2;
+}
+
+.answer-queue-table-cell:last-child {
+  flex: 0 0 100px;
+  text-align: center;
+}
+
+.answer-queue-table-header .answer-queue-table-cell {
+  border-right: 1px solid var(--color-border);
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--color-text-muted);
+}
+
+.answer-queue-table-header .answer-queue-table-cell:last-child {
+  border-right: none;
+}
+
+/* ===========================
    Responsive
    =========================== */
 @media (max-width: 800px) {

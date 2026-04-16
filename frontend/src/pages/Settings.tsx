@@ -159,6 +159,7 @@ export default function Settings() {
   const savedCoursesRef = useRef<Record<string, string>>({})
   const [answerQueue, setAnswerQueue] = useState<Array<{page: string, answer: string, type: string}>>([])
   const [newAnswer, setNewAnswer] = useState({page: '', answer: '', type: 'single'})
+  const [queueExpanded, setQueueExpanded] = useState(true)
 
   const reloadAi = () =>
     fetch('/api/ai/settings').then((r) => r.json()).then(setAi).catch(() => { })
@@ -167,7 +168,7 @@ export default function Settings() {
     fetch('/api/answer/queue').then((r) => r.json()).then((data) => setAnswerQueue(data.queue)).catch(() => { })
 
   const handleAddAnswer = async () => {
-    if (!newAnswer.page.trim() || !newAnswer.answer.trim()) return
+    if (!newAnswer.answer.trim()) return
     try {
       await fetch('/api/answer/queue', {
         method: 'POST',
@@ -689,7 +690,7 @@ export default function Settings() {
             <button
               className="btn btn-primary"
               onClick={handleAddAnswer}
-              disabled={!newAnswer.page.trim() || !newAnswer.answer.trim()}
+              disabled={!newAnswer.answer.trim()}
             >
               {t('settings.addToQueue') || 'Add to Queue'}
             </button>
@@ -705,28 +706,46 @@ export default function Settings() {
           
           {answerQueue.length > 0 && (
             <div style={{ marginTop: '20px' }}>
-              <h3>{t('settings.queueItems') || 'Queue Items'} ({answerQueue.length})</h3>
-              <div className="answer-queue-list">
-                {answerQueue.map((item, idx) => (
-                  <div key={idx} className="answer-queue-item">
-                    <div className="answer-queue-info">
-                      <p><strong>{t('settings.pptPage') || 'PPT Page'}:</strong> {item.page}</p>
-                      <p><strong>{t('settings.questionType') || 'Question Type'}:</strong> {
-                        item.type === 'single' ? (t('settings.singleChoice') || 'Single Choice') :
-                        item.type === 'multiple' ? (t('settings.multipleChoice') || 'Multiple Choice') :
-                        (t('settings.shortAnswer') || 'Short Answer')
-                      }</p>
-                      <p><strong>{t('settings.answer') || 'Answer'}:</strong> {item.answer}</p>
-                    </div>
-                    <button
-                      className="btn btn-sm btn-danger"
-                      onClick={() => handleRemoveAnswer(idx)}
-                    >
-                      {t('settings.remove') || 'Remove'}
-                    </button>
-                  </div>
-                ))}
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+                <h3>{t('settings.queueItems') || 'Queue Items'} ({answerQueue.length})</h3>
+                <button
+                  className="btn btn-sm btn-secondary"
+                  onClick={() => setQueueExpanded(!queueExpanded)}
+                >
+                  {queueExpanded ? '▼' : '▶'}
+                </button>
               </div>
+              {queueExpanded && (
+                <div className="answer-queue-table">
+                  <div className="answer-queue-table-header">
+                    <div className="answer-queue-table-cell">{t('settings.pptPage') || 'PPT Page'}</div>
+                    <div className="answer-queue-table-cell">{t('settings.questionType') || 'Question Type'}</div>
+                    <div className="answer-queue-table-cell">{t('settings.answer') || 'Answer'}</div>
+                    <div className="answer-queue-table-cell">{t('settings.actions') || 'Actions'}</div>
+                  </div>
+                  <div className="answer-queue-table-body">
+                    {answerQueue.map((item, idx) => (
+                      <div key={idx} className="answer-queue-table-row">
+                        <div className="answer-queue-table-cell">{item.page || '-'}</div>
+                        <div className="answer-queue-table-cell">
+                          {item.type === 'single' ? (t('settings.singleChoice') || 'Single Choice') :
+                           item.type === 'multiple' ? (t('settings.multipleChoice') || 'Multiple Choice') :
+                           (t('settings.shortAnswer') || 'Short Answer')}
+                        </div>
+                        <div className="answer-queue-table-cell">{item.answer}</div>
+                        <div className="answer-queue-table-cell">
+                          <button
+                            className="btn btn-sm btn-danger"
+                            onClick={() => handleRemoveAnswer(idx)}
+                          >
+                            {t('settings.remove') || 'Remove'}
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           )}
         </div>
