@@ -259,6 +259,21 @@ async def auth_status():
     return {"logged_in": True, "user": cfg["user"]}
 
 
+@app.get("/api/user/avatar")
+async def user_avatar():
+    from fastapi.responses import Response as HttpResponse
+    cfg = get_config()
+    avatar_url = cfg.get("user", {}).get("avatar", "")
+    if not avatar_url:
+        return HttpResponse(status_code=404, content=b"", media_type="image/png")
+    try:
+        r = http_request("GET", avatar_url, timeout=10)
+        content_type = r.headers.get("Content-Type", "image/png").split(";")[0].strip()
+        return HttpResponse(content=r.content, media_type=content_type)
+    except Exception:
+        return HttpResponse(status_code=502, content=b"", media_type="image/png")
+
+
 @app.post("/api/auth/logout")
 async def auth_logout():
     cfg = get_config()

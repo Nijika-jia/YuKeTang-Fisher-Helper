@@ -95,6 +95,17 @@ export default function App() {
           ) : null}
         </div>
         <div className="navbar-actions">
+          {auth.loggedIn && (
+            <div className="navbar-user">
+              <img
+                className="navbar-avatar"
+                src="/api/user/avatar"
+                alt={String(auth.user?.name ?? '')}
+                onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
+              />
+              <span className="navbar-username">{String(auth.user?.name ?? '')}</span>
+            </div>
+          )}
           <button className="btn-ghost btn-sm" onClick={toggleLanguage}>
             {i18n.language.startsWith('zh') ? 'EN' : '中文'}
           </button>
