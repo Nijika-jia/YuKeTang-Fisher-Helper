@@ -267,6 +267,16 @@ class Lesson:
     #   short answer).
 
     _FALLBACK_RESERVE = 5  # seconds before deadline to submit fallback
+    # Server may send limit<=0 (no countdown); vision API calls often need tens of seconds.
+    _AI_NO_DEADLINE_WAIT_SEC = 180.0
+
+    @staticmethod
+    def _ai_result_acceptable(problemtype: int, result: Any) -> bool:
+        if result is None:
+            return False
+        if problemtype == 5:
+            return isinstance(result, str) and bool(result.strip())
+        return isinstance(result, list) and len(result) > 0
 
     def _submit_answer(self, problemid: Any, problemtype: int, real_answer: Any, source: str) -> None:
         if problemtype == 5:
@@ -362,26 +372,41 @@ class Lesson:
                 return
 
             # If AI is done and succeeded, submit AI answer.
-            if ai_done.is_set() and result_holder[0] is not None:
+            if ai_done.is_set() and self._ai_result_acceptable(problemtype, result_holder[0]):
                 self._submit_answer(problemid, problemtype, result_holder[0], "ai")
                 return
 
-            # AI not done yet — wait until deadline - FALLBACK_RESERVE.
-            if not ai_done.is_set() and limit > 0:
-                time_left = limit - (time.time() - start_time)
-                extra_wait = max(0, time_left - self._FALLBACK_RESERVE)
-                if extra_wait > 0:
-                    ai_done.wait(timeout=extra_wait)
+            # AI not done yet — wait until deadline - FALLBACK_RESERVE, or long timeout if no server limit.
+            if not ai_done.is_set():
+                if limit > 0:
+                    time_left = limit - (time.time() - start_time)
+                    extra_wait = max(0, time_left - self._FALLBACK_RESERVE)
+                    if extra_wait > 0:
+                        ai_done.wait(timeout=extra_wait)
+                else:
+                    logger.info(
+                        "No positive answer limit (limit=%s); waiting up to %.0fs for vision API",
+                        limit,
+                        self._AI_NO_DEADLINE_WAIT_SEC,
+                    )
+                    ai_done.wait(timeout=self._AI_NO_DEADLINE_WAIT_SEC)
 
             if not self._running:
                 return
 
             # Check AI result one more time.
-            if result_holder[0] is not None:
+            if self._ai_result_acceptable(problemtype, result_holder[0]):
                 self._submit_answer(problemid, problemtype, result_holder[0], "ai")
                 return
 
             # AI failed — emit notification and submit fallback.
+            if ai_done.is_set():
+                logger.warning(
+                    "AI unusable or failed for problem %s (type=%s), result=%r",
+                    problemid,
+                    problemtype,
+                    result_holder[0],
+                )
             self.on_event("problem", {
                 "lesson": self.lessonname,
                 "lessonid": self.lessonid,
