@@ -224,6 +224,8 @@ class AIKeyEntry(BaseModel):
     name: str
     provider: str
     key: str
+    base_url: Optional[str] = None
+    model: Optional[str] = None
 
 class AIActiveKey(BaseModel):
     active_key: int
@@ -512,16 +514,29 @@ async def update_course_settings(course_id: str, body: CourseConfig):
 
 
 @app.post("/api/ai/test")
-async def test_ai_key(provider: str = Form(...), key: Optional[str] = Form(None), key_index: Optional[int] = Form(None), image: UploadFile = File(...)):
-    # Get key from index if provided
-    if key_index is not None:
-        cfg = get_ai_config()
-        if key_index >= len(cfg["keys"]):
+async def test_ai_key(
+    provider: str = Form(...),
+    key: Optional[str] = Form(None),
+    key_index: Optional[str] = Form(default=None),
+    image: UploadFile = File(...),
+):
+    # Multipart form may send key_index as a string; Optional[int] sometimes fails to bind — parse explicitly.
+    idx: Optional[int] = None
+    if key_index is not None and str(key_index).strip() != "":
+        try:
+            idx = int(key_index)
+        except ValueError:
             return {"ok": False, "error": "Invalid key index"}
-        key_entry = cfg["keys"][key_index]
+
+    key_entry: Optional[dict] = None
+    if idx is not None:
+        cfg = get_ai_config()
+        if idx < 0 or idx >= len(cfg["keys"]):
+            return {"ok": False, "error": "Invalid key index"}
+        key_entry = cfg["keys"][idx]
         key = key_entry["key"]
-        provider = key_entry["provider"]
-        _logger.info("Testing AI provider: %s using key index: %d", provider, key_index)
+        provider = key_entry.get("provider") or ""
+        _logger.info("Testing AI provider: %s using key index: %d", provider, idx)
     else:
         if not provider or not key:
             return {"ok": False, "error": "Missing provider or key"}
@@ -531,12 +546,24 @@ async def test_ai_key(provider: str = Form(...), key: Optional[str] = Form(None)
     if not image:
         return {"ok": False, "error": "Image is required for testing"}
     
-    from ai_provider import create_provider
+    from ai_provider import create_provider, create_provider_from_entry, describe_provider_failure
     try:
-        ai_client = create_provider(provider, key)
-        if not ai_client:
-            _logger.error("Failed to create provider: %s", provider)
-            return {"ok": False, "error": "Invalid provider"}
+        if idx is not None and key_entry is not None:
+            ai_client = create_provider_from_entry(key_entry)
+            if not ai_client:
+                _logger.error("Failed to create provider from entry: %s", key_entry.get("provider"))
+                return {"ok": False, "error": describe_provider_failure(key_entry)}
+        else:
+            ai_client = create_provider(provider, key)
+            if not ai_client:
+                _logger.error("Failed to create provider: %s", provider)
+                return {
+                    "ok": False,
+                    "error": (
+                        f"Invalid provider: {provider}. "
+                        "Use google, qwen, dashscope, moonshot, or add a custom OpenAI-compatible key with Base URL and model."
+                    ),
+                }
         
         image_bytes = await image.read()
         _logger.info("Test image size: %d bytes", len(image_bytes))
@@ -552,12 +579,15 @@ async def test_ai_key(provider: str = Form(...), key: Optional[str] = Form(None)
 
 @app.get("/api/ai/settings")
 async def get_ai_settings():
+    from ai_provider import effective_ai_entry
+
     cfg = get_ai_config()
     masked_keys = []
     for entry in cfg["keys"]:
-        raw = entry["key"]
+        eff = effective_ai_entry(entry)
+        raw = eff["key"]
         masked = raw[:4] + "****" + raw[-4:] if len(raw) > 8 else "****"
-        masked_keys.append({**entry, "key": masked})
+        masked_keys.append({**eff, "key": masked})
     return {"keys": masked_keys, "active_key": cfg["active_key"], "fallback_keys": cfg.get("fallback_keys", True)}
 
 

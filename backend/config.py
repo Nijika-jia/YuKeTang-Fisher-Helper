@@ -155,6 +155,32 @@ def get_all_ai_keys() -> list:
     return ordered
 
 
+def get_active_ai_key_entry() -> dict | None:
+    """Return the full key dict for the active slot, or None."""
+    ai = get_ai_config()
+    keys = ai["keys"]
+    idx = ai["active_key"]
+    if idx < 0 or idx >= len(keys):
+        return None
+    return keys[idx]
+
+
+def get_all_ai_key_entries() -> list:
+    """Same ordering as get_all_ai_keys but full entry dicts (for openai_compat base_url/model)."""
+    ai = get_ai_config()
+    keys = ai["keys"]
+    active = ai["active_key"]
+    if not keys:
+        return []
+    ordered = []
+    if 0 <= active < len(keys):
+        ordered.append(keys[active])
+    for i, entry in enumerate(keys):
+        if i != active:
+            ordered.append(entry)
+    return ordered
+
+
 def update_ai_config(data: dict) -> None:
     cfg = get_config()
     ai = cfg.setdefault("ai", dict(DEFAULT_AI_CONFIG))
