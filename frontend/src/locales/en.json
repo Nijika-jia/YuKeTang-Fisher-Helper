@@ -99,7 +99,6 @@
     "testFailed": "Test failed",
     "testImagePlaceholder": "Upload test image",
     "testImageHint": "If an image is uploaded, the AI will try to solve the problem in the image; otherwise it only tests basic text connectivity.",
-    "answerQueue": "Answer Queue",
     "pptPage": "PPT Page",
     "enterPptPage": "Enter PPT page number (e.g., 5)",
     "questionType": "Question Type",

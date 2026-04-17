@@ -99,7 +99,6 @@
     "testFailed": "测试失败",
     "testImagePlaceholder": "上传测试图片",
     "testImageHint": "如果上传了图片，AI 将尝试解析并回答图片中的题目",
-    "answerQueue": "答案队列",
     "pptPage": "PPT页数",
     "enterPptPage": "输入PPT页数（例如：5）",
     "questionType": "题目类型",
