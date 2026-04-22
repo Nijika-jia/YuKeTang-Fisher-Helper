@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { NotificationSub, CourseItem } from '../types'
+import { useToast } from '../components/Toast'
 
 interface CourseConfig {
   name: string
@@ -146,6 +147,7 @@ function QuizModeSelect({
 
 export default function Settings() {
   const { t } = useTranslation()
+  const { addToast } = useToast()
   const [courses, setCourses] = useState<CourseState[]>([])
   const [loading, setLoading] = useState(true)
   const [ai, setAi] = useState<AISettings>({ keys: [], active_key: -1, fallback_keys: true })
@@ -179,14 +181,27 @@ export default function Settings() {
   const handleAddAnswer = async () => {
     if (!newAnswer.answer.trim()) return
     try {
-      await fetch('/api/answer/queue', {
+      const resp = await fetch('/api/answer/queue', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(newAnswer),
       })
+      if (!resp.ok) throw new Error('Failed')
+      const typeLabel = newAnswer.type === 'single'
+        ? t('settings.singleChoice')
+        : newAnswer.type === 'multiple'
+          ? t('settings.multipleChoice')
+          : t('settings.shortAnswer')
+      const pageLabel = newAnswer.page
+        ? `${t('settings.pptPage')}: ${newAnswer.page}`
+        : ''
+      const detail = [pageLabel, typeLabel, `${t('settings.answer')}: ${newAnswer.answer}`].filter(Boolean).join(' | ')
+      addToast('success', `${t('settings.addedToQueue')}: ${detail}`)
       setNewAnswer({ page: '', answer: '', type: 'single' })
       await reloadAnswerQueue()
-    } catch { }
+    } catch {
+      addToast('error', t('settings.addToQueueFailed'))
+    }
   }
 
   const handleRemoveAnswer = async (index: number) => {

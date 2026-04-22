@@ -110,7 +110,10 @@
     "addToQueue": "Add to Queue",
     "clearQueue": "Clear Queue",
     "queueItems": "Queue Items",
-    "remove": "Remove"
+    "remove": "Remove",
+    "actions": "Actions",
+    "addedToQueue": "Added to queue",
+    "addToQueueFailed": "Failed to add to queue"
   },
   "events": {
     "signin": "Sign-in",

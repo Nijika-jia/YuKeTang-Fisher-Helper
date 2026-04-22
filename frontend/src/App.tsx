@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next'
 import Login from './pages/Login'
 import Dashboard from './pages/Dashboard'
 import Settings from './pages/Settings'
+import { ToastProvider } from './components/Toast'
 
 interface AuthState {
   checked: boolean
@@ -68,6 +69,7 @@ export default function App() {
   }
 
   return (
+    <ToastProvider>
     <div className="app">
       <div className="sticky-header">
       <nav className="navbar">
@@ -168,5 +170,6 @@ export default function App() {
         </Routes>
       </main>
     </div>
+    </ToastProvider>
   )
 }
