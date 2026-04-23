@@ -120,7 +120,7 @@
     "save": "保存",
     "cancel": "取消",
     "batchImport": "批量导入",
-    "batchImportHint": "每行一条答案，支持以下格式：\n• 答案（默认单选题，如 A）\n• PPT页数|答案（如 5|A）\n• 类型|PPT页数|答案（如 single|5|A 或 multiple|10|A,C 或 short||简答题答案）",
+    "batchImportHint": "每行一条答案，支持以下格式：\n • 答案（默认单选题，如 A）\n • PPT页数|答案（如 5|A）\n • 类型|PPT页数|答案（如 single|5|A 或 multiple|10|A,C 或 short||简答题答案）",
     "batchImportPlaceholder": "A\n5|B\nsingle|3|C\nmultiple|10|A,C\nshort||这是简答题答案",
     "import": "导入",
     "batchImportSuccess": "成功导入 {{count}} 条答案",
