@@ -113,7 +113,18 @@
     "remove": "Remove",
     "actions": "Actions",
     "addedToQueue": "Added to queue",
-    "addToQueueFailed": "Failed to add to queue"
+    "addToQueueFailed": "Failed to add to queue",
+    "queueUpdated": "Queue updated",
+    "queueUpdateFailed": "Failed to update queue",
+    "edit": "Edit",
+    "save": "Save",
+    "cancel": "Cancel",
+    "batchImport": "Batch Import",
+    "batchImportHint": "One answer per line. Supported formats:\n• Answer (default single choice, e.g. A)\n• Page|Answer (e.g. 5|A)\n• Type|Page|Answer (e.g. single|5|A or multiple|10|A,C or short||short answer text)",
+    "batchImportPlaceholder": "A\n5|B\nsingle|3|C\nmultiple|10|A,C\nshort||short answer text",
+    "import": "Import",
+    "batchImportSuccess": "Successfully imported {{count}} answer(s)",
+    "batchImportFailed": "Batch import failed"
   },
   "events": {
     "signin": "Sign-in",

@@ -233,6 +233,26 @@ def remove_answer_from_queue(index: int) -> None:
         save_answer_queue(queue)
 
 
+def update_answer_in_queue(index: int, answer: dict) -> None:
+    """Update an answer in the queue by index."""
+    queue = get_answer_queue()
+    if 0 <= index < len(queue):
+        queue[index] = answer
+        save_answer_queue(queue)
+
+
+def batch_add_to_queue(answers: list) -> int:
+    """Add multiple answers to the queue. Returns the number of items added."""
+    queue = get_answer_queue()
+    added = 0
+    for a in answers:
+        if isinstance(a, dict) and a.get("answer", "").strip():
+            queue.append(a)
+            added += 1
+    save_answer_queue(queue)
+    return added
+
+
 def clear_answer_queue() -> None:
     """Clear the answer queue."""
     save_answer_queue([])

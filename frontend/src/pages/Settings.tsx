@@ -170,7 +170,11 @@ export default function Settings() {
   const savedCoursesRef = useRef<Record<string, string>>({})
   const [answerQueue, setAnswerQueue] = useState<Array<{page: string, answer: string, type: string}>>([])
   const [newAnswer, setNewAnswer] = useState({page: '', answer: '', type: 'single'})
+  const [editingIndex, setEditingIndex] = useState<number | null>(null)
+  const [editAnswer, setEditAnswer] = useState({page: '', answer: '', type: 'single'})
   const [queueExpanded, setQueueExpanded] = useState(true)
+  const [showBatchImport, setShowBatchImport] = useState(false)
+  const [batchText, setBatchText] = useState('')
 
   const reloadAi = () =>
     fetch('/api/ai/settings').then((r) => r.json()).then(setAi).catch(() => { })
@@ -217,6 +221,81 @@ export default function Settings() {
       await fetch('/api/answer/queue', { method: 'DELETE' })
       await reloadAnswerQueue()
     } catch { }
+  }
+
+  const handleEditAnswer = (index: number) => {
+    const item = answerQueue[index]
+    setEditAnswer({ page: item.page, answer: item.answer, type: item.type })
+    setEditingIndex(index)
+  }
+
+  const handleSaveEdit = async () => {
+    if (editingIndex === null || !editAnswer.answer.trim()) return
+    try {
+      const resp = await fetch(`/api/answer/queue/${editingIndex}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(editAnswer),
+      })
+      if (!resp.ok) throw new Error('Failed')
+      const typeLabel = editAnswer.type === 'single'
+        ? t('settings.singleChoice')
+        : editAnswer.type === 'multiple'
+          ? t('settings.multipleChoice')
+          : t('settings.shortAnswer')
+      const pageLabel = editAnswer.page
+        ? `${t('settings.pptPage')}: ${editAnswer.page}`
+        : ''
+      const detail = [pageLabel, typeLabel, `${t('settings.answer')}: ${editAnswer.answer}`].filter(Boolean).join(' | ')
+      addToast('success', `${t('settings.queueUpdated')}: ${detail}`)
+      setEditingIndex(null)
+      await reloadAnswerQueue()
+    } catch {
+      addToast('error', t('settings.queueUpdateFailed'))
+    }
+  }
+
+  const handleCancelEdit = () => {
+    setEditingIndex(null)
+  }
+
+  const handleBatchImport = async () => {
+    const lines = batchText.split('\n').map(l => l.trim()).filter(Boolean)
+    if (lines.length === 0) return
+    const answers: Array<{page: string, answer: string, type: string}> = []
+    for (const line of lines) {
+      const parts = line.split('|')
+      if (parts.length === 1) {
+        const val = parts[0].trim()
+        if (val) answers.push({ page: '', answer: val, type: 'single' })
+      } else if (parts.length === 2) {
+        const page = parts[0].trim()
+        const answer = parts[1].trim()
+        if (answer) answers.push({ page, answer, type: 'single' })
+      } else {
+        const rawType = parts[0].trim().toLowerCase()
+        const page = parts[1].trim()
+        const answer = parts.slice(2).join('|').trim()
+        const type = ['single', 'multiple', 'short'].includes(rawType) ? rawType : 'single'
+        if (answer) answers.push({ page, answer, type })
+      }
+    }
+    if (answers.length === 0) return
+    try {
+      const resp = await fetch('/api/answer/queue/batch', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ answers }),
+      })
+      if (!resp.ok) throw new Error('Failed')
+      const data = await resp.json()
+      addToast('success', t('settings.batchImportSuccess', { count: data.added ?? answers.length }))
+      setBatchText('')
+      setShowBatchImport(false)
+      await reloadAnswerQueue()
+    } catch {
+      addToast('error', t('settings.batchImportFailed'))
+    }
   }
 
   useEffect(() => {
@@ -803,7 +882,44 @@ export default function Settings() {
             >
               {t('settings.clearQueue') || 'Clear Queue'}
             </button>
+            <button
+              className="btn btn-secondary"
+              onClick={() => setShowBatchImport(!showBatchImport)}
+              style={{ marginLeft: '10px' }}
+            >
+              {t('settings.batchImport') || 'Batch Import'}
+            </button>
           </div>
+
+          {showBatchImport && (
+            <div className="batch-import-area">
+              <div className="batch-import-hint">
+                {t('settings.batchImportHint')}
+              </div>
+              <textarea
+                className="batch-import-textarea"
+                rows={6}
+                value={batchText}
+                onChange={(e) => setBatchText(e.target.value)}
+                placeholder={t('settings.batchImportPlaceholder')}
+              />
+              <div className="batch-import-actions">
+                <button
+                  className="btn btn-primary"
+                  onClick={handleBatchImport}
+                  disabled={!batchText.trim()}
+                >
+                  {t('settings.import') || 'Import'}
+                </button>
+                <button
+                  className="btn btn-secondary"
+                  onClick={() => { setShowBatchImport(false); setBatchText('') }}
+                >
+                  {t('settings.cancel') || 'Cancel'}
+                </button>
+              </div>
+            </div>
+          )}
           
           {answerQueue.length > 0 && (
             <div style={{ marginTop: '20px' }}>
@@ -827,21 +943,106 @@ export default function Settings() {
                   <div className="answer-queue-table-body">
                     {answerQueue.map((item, idx) => (
                       <div key={idx} className="answer-queue-table-row">
-                        <div className="answer-queue-table-cell">{item.page || '-'}</div>
-                        <div className="answer-queue-table-cell">
-                          {item.type === 'single' ? (t('settings.singleChoice') || 'Single Choice') :
-                           item.type === 'multiple' ? (t('settings.multipleChoice') || 'Multiple Choice') :
-                           (t('settings.shortAnswer') || 'Short Answer')}
-                        </div>
-                        <div className="answer-queue-table-cell">{item.answer}</div>
-                        <div className="answer-queue-table-cell">
-                          <button
-                            className="btn btn-sm btn-danger"
-                            onClick={() => handleRemoveAnswer(idx)}
-                          >
-                            {t('settings.remove') || 'Remove'}
-                          </button>
-                        </div>
+                        {editingIndex === idx ? (
+                          <>
+                            <div className="answer-queue-table-cell">
+                              <input
+                                type="text"
+                                className="form-input"
+                                value={editAnswer.page}
+                                onChange={(e) => setEditAnswer({ ...editAnswer, page: e.target.value })}
+                                placeholder={t('settings.enterPptPage') || 'Page'}
+                              />
+                            </div>
+                            <div className="answer-queue-table-cell">
+                              <select
+                                className="form-input"
+                                value={editAnswer.type}
+                                onChange={(e) => setEditAnswer({ ...editAnswer, type: e.target.value, answer: '' })}
+                              >
+                                <option value="single">{t('settings.singleChoice') || 'Single Choice'}</option>
+                                <option value="multiple">{t('settings.multipleChoice') || 'Multiple Choice'}</option>
+                                <option value="short">{t('settings.shortAnswer') || 'Short Answer'}</option>
+                              </select>
+                            </div>
+                            <div className="answer-queue-table-cell">
+                              {editAnswer.type !== 'short' ? (
+                                <div className="option-buttons">
+                                  {['A', 'B', 'C', 'D', 'E', 'F'].map((option) => (
+                                    <button
+                                      key={option}
+                                      className={`option-btn ${editAnswer.type === 'single' && editAnswer.answer === option ? 'selected' : ''} ${editAnswer.type === 'multiple' && editAnswer.answer.split(',').includes(option) ? 'selected' : ''}`}
+                                      onClick={() => {
+                                        if (editAnswer.type === 'single') {
+                                          setEditAnswer({ ...editAnswer, answer: option })
+                                        } else {
+                                          const currentAnswers = editAnswer.answer ? editAnswer.answer.split(',') : []
+                                          const newAnswers = currentAnswers.includes(option)
+                                            ? currentAnswers.filter(a => a !== option)
+                                            : [...currentAnswers, option].sort()
+                                          setEditAnswer({ ...editAnswer, answer: newAnswers.join(',') })
+                                        }
+                                      }}
+                                    >
+                                      {option}
+                                    </button>
+                                  ))}
+                                </div>
+                              ) : (
+                                <input
+                                  type="text"
+                                  className="form-input"
+                                  value={editAnswer.answer}
+                                  onChange={(e) => setEditAnswer({ ...editAnswer, answer: e.target.value })}
+                                  placeholder={t('settings.enterAnswer') || 'Answer'}
+                                />
+                              )}
+                            </div>
+                            <div className="answer-queue-table-cell">
+                              <div className="edit-actions">
+                                <button
+                                  className="btn btn-sm btn-success"
+                                  onClick={handleSaveEdit}
+                                  disabled={!editAnswer.answer.trim()}
+                                >
+                                  {t('settings.save') || 'Save'}
+                                </button>
+                                <button
+                                  className="btn btn-sm btn-secondary"
+                                  onClick={handleCancelEdit}
+                                >
+                                  {t('settings.cancel') || 'Cancel'}
+                                </button>
+                              </div>
+                            </div>
+                          </>
+                        ) : (
+                          <>
+                            <div className="answer-queue-table-cell">{item.page || '-'}</div>
+                            <div className="answer-queue-table-cell">
+                              {item.type === 'single' ? (t('settings.singleChoice') || 'Single Choice') :
+                               item.type === 'multiple' ? (t('settings.multipleChoice') || 'Multiple Choice') :
+                               (t('settings.shortAnswer') || 'Short Answer')}
+                            </div>
+                            <div className="answer-queue-table-cell">{item.answer}</div>
+                            <div className="answer-queue-table-cell">
+                              <div className="edit-actions">
+                                <button
+                                  className="btn btn-sm btn-secondary"
+                                  onClick={() => handleEditAnswer(idx)}
+                                >
+                                  {t('settings.edit') || 'Edit'}
+                                </button>
+                                <button
+                                  className="btn btn-sm btn-danger"
+                                  onClick={() => handleRemoveAnswer(idx)}
+                                >
+                                  {t('settings.remove') || 'Remove'}
+                                </button>
+                              </div>
+                            </div>
+                          </>
+                        )}
                       </div>
                     ))}
                   </div>

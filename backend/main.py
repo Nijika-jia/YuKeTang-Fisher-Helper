@@ -665,10 +665,25 @@ async def add_to_answer_queue(body: dict):
     return {"ok": True}
 
 
+@app.post("/api/answer/queue/batch")
+async def batch_add_to_answer_queue(body: dict):
+    from config import batch_add_to_queue
+    answers = body.get("answers", [])
+    added = batch_add_to_queue(answers)
+    return {"ok": True, "added": added}
+
+
 @app.delete("/api/answer/queue/{index}")
 async def remove_from_answer_queue(index: int):
     from config import remove_answer_from_queue
     remove_answer_from_queue(index)
+    return {"ok": True}
+
+
+@app.put("/api/answer/queue/{index}")
+async def update_answer_in_queue(index: int, body: dict):
+    from config import update_answer_in_queue as update_fn
+    update_fn(index, body)
     return {"ok": True}
 
 
