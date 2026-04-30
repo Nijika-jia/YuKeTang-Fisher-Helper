@@ -134,7 +134,7 @@
     "call": "Roll Call",
     "lesson_end": "Class Ended",
     "lesson_start": "Class Started",
-    "session_expired": "Session Expired",
+    "session_expired": "Session Expired, please login again",
     "red_packet": "Red Packet",
     "problemType1": "Single Choice",
     "problemType2": "Multiple Choice",

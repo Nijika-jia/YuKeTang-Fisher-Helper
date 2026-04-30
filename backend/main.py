@@ -101,7 +101,16 @@ def _refresh_local_cache(sessionid: str) -> None:
 
     cfg["user"] = http_request("GET", api_url(URL_USER_INFO), headers=headers).json()["data"]
 
-    raw_courses = http_request("GET", api_url(URL_COURSE_LIST), headers=headers).json()["data"]["list"]
+        # 安全获取响应数据
+    response_data = http_request("GET", api_url(URL_COURSE_LIST), headers=headers).json()
+
+    # 检查是否包含 data
+    if "data" not in response_data:
+        print(f"雨课堂接口返回异常：{response_data}")
+        print("请检查你的 sessionid 是否正确/过期！")
+        raw_courses = []
+    else:
+        raw_courses = response_data["data"].get("list", [])
     course_list = [
         {
             "classroom_id": str(c["classroom_id"]),

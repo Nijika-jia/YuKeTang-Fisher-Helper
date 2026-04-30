@@ -134,7 +134,7 @@
     "call": "点名",
     "lesson_end": "下课",
     "lesson_start": "上课",
-    "session_expired": "登录过期",
+    "session_expired": "登录过期, 请重新登录",
     "red_packet": "红包",
     "problemType1": "单选题",
     "problemType2": "多选题",

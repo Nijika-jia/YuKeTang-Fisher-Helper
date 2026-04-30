@@ -608,10 +608,10 @@ export default function Settings() {
         <div className="card">
           {ai.keys.length > 0 && (
             <>
-              <div className="ai-test-row">
+              <div className="form-row" style={{ padding: '0 16px', marginBottom: 16 }}>
                 <div style={{ flex: 1 }}>
                   <label className="form-label">{t('settings.testImagePlaceholder') || 'Upload test image'} *</label>
-                  <p className="form-help">
+                  <p className="form-help" style={{ fontSize: '12px', color: '#666', marginTop: '4px', marginBottom: '8px' }}>
                     {t('settings.testImageHint') || 'Please upload an image containing a question for AI testing. Image is required.'}
                   </p>
                   <input
@@ -643,7 +643,7 @@ export default function Settings() {
                           : ''}
                       </span>
                       {entry.provider === 'openai_compat' && entry.base_url && (
-                        <span className="ai-key-meta">
+                        <span className="ai-key-meta" style={{ fontSize: 12, opacity: 0.85 }}>
                           {entry.base_url}
                         </span>
                       )}
@@ -677,7 +677,7 @@ export default function Settings() {
           )}
 
           {ai.keys.length > 1 && (
-            <div className="ai-test-row">
+            <div className="form-row" style={{ padding: '0 16px', marginBottom: 8 }}>
               <label className="form-label">
                 {t('settings.fallbackKeys')}
                 <span className="tooltip-trigger" data-tooltip={t('settings.fallbackKeysDesc')}>?</span>
@@ -700,10 +700,23 @@ export default function Settings() {
           )}
 
           <div
-            className={`ai-add-form ${newKey.provider === 'openai_compat' ? 'ai-add-form-vertical' : ''}`}
+            className="ai-add-form"
+            style={
+              newKey.provider === 'openai_compat'
+                ? { flexDirection: 'column', alignItems: 'stretch' }
+                : undefined
+            }
           >
-            <div className="ai-add-form-inner">
-              <div className="ai-add-fields">
+            <div
+              style={{
+                display: 'flex',
+                gap: 10,
+                alignItems: 'center',
+                width: '100%',
+                flexWrap: 'wrap',
+              }}
+            >
+              <div className="ai-add-fields" style={{ flex: 1, minWidth: 0 }}>
                 <input
                   type="text"
                   className="form-input"
@@ -740,6 +753,7 @@ export default function Settings() {
               </div>
               <button
                 className="btn btn-primary"
+                style={{ flexShrink: 0 }}
                 onClick={handleAddKey}
                 disabled={
                   addingKey
@@ -753,7 +767,7 @@ export default function Settings() {
               </button>
             </div>
             {newKey.provider === 'openai_compat' && (
-              <div className="ai-add-fields ai-add-fields-extra">
+              <div className="ai-add-fields" style={{ width: '100%', marginTop: 8 }}>
                 <input
                   type="text"
                   className="form-input"
@@ -852,7 +866,7 @@ export default function Settings() {
               />
             </div>
           )}
-          <div className="btn-group">
+          <div className="form-row">
             <button
               className="btn btn-primary"
               onClick={handleAddAnswer}
@@ -864,12 +878,14 @@ export default function Settings() {
               className="btn btn-danger"
               onClick={handleClearQueue}
               disabled={answerQueue.length === 0}
+              style={{ marginLeft: '10px' }}
             >
               {t('settings.clearQueue') || 'Clear Queue'}
             </button>
             <button
               className="btn btn-secondary"
               onClick={() => setShowBatchImport(!showBatchImport)}
+              style={{ marginLeft: '10px' }}
             >
               {t('settings.batchImport') || 'Batch Import'}
             </button>
@@ -906,8 +922,8 @@ export default function Settings() {
           )}
           
           {answerQueue.length > 0 && (
-            <div className="queue-section">
-              <div className="queue-header">
+            <div style={{ marginTop: '20px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
                 <h3>{t('settings.queueItems') || 'Queue Items'} ({answerQueue.length})</h3>
                 <button
                   className="btn btn-sm btn-secondary"
@@ -1058,7 +1074,7 @@ export default function Settings() {
               </button>
             </div>
           </div>
-          <div className="audio-upload-row">
+          <div className="ai-add-form" style={{ marginTop: '16px' }}>
             <div className="ai-add-fields">
               <input
                 type="file"
@@ -1072,7 +1088,7 @@ export default function Settings() {
               />
             </div>
             {audioExists && !audioFile && (
-              <div className="audio-exists-badge">
+              <div className="audio-status" style={{ marginBottom: '8px', padding: '8px', backgroundColor: '#e8f5e9', borderRadius: '4px', color: '#2e7d32' }}>
                 ✓ {t('settings.audioUploaded') || 'Audio file uploaded'}
               </div>
             )}

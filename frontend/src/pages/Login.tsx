@@ -176,8 +176,8 @@ export default function Login({ onSuccess }: LoginProps) {
           </button>
         </div>
 
-        <div className="login-form-group">
-          <label className="form-label">{t('login.server')}</label>
+        <div className="form-group" style={{ marginBottom: '1rem', width: '100%' }}>
+          <label className="form-label" style={{ marginBottom: '0.5rem', marginRight: '0.5rem' }}>{t('login.server')}</label>
           <select
             className="form-select"
             value={domain}
@@ -242,8 +242,8 @@ export default function Login({ onSuccess }: LoginProps) {
                 </div>
               </div>
             ) : (
-              <div className="login-form-group">
-                <div className="login-form-group">
+              <div style={{ width: '100%' }}>
+                <div className="form-group" style={{ marginBottom: '0.75rem' }}>
                   <input
                     type="tel"
                     className="form-input"
@@ -251,9 +251,10 @@ export default function Login({ onSuccess }: LoginProps) {
                     value={phone}
                     onChange={e => setPhone(e.target.value)}
                     disabled={pwLoading}
+                    style={{ width: '100%', padding: '0.5rem 0.75rem' }}
                   />
                 </div>
-                <div className="login-form-group">
+                <div className="form-group" style={{ marginBottom: '0.75rem' }}>
                   <input
                     type="password"
                     className="form-input"
@@ -262,15 +263,17 @@ export default function Login({ onSuccess }: LoginProps) {
                     onChange={e => setPassword(e.target.value)}
                     disabled={pwLoading}
                     onKeyDown={e => { if (e.key === 'Enter') handlePasswordLogin() }}
+                    style={{ width: '100%', padding: '0.5rem 0.75rem' }}
                   />
                 </div>
                 {pwError && (
-                  <p className="login-error">{pwError}</p>
+                  <p style={{ color: 'var(--color-error, #e53e3e)', fontSize: '0.85rem', marginBottom: '0.75rem' }}>{pwError}</p>
                 )}
                 <button
-                  className="btn btn-primary login-btn-full"
+                  className="btn btn-primary"
                   onClick={handlePasswordLogin}
                   disabled={pwLoading}
+                  style={{ width: '100%' }}
                 >
                   {pwLoading ? t('login.pwLoggingIn') : t('login.pwLogin')}
                 </button>
