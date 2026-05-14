@@ -209,18 +209,34 @@ export default function Settings() {
   }
 
   const handleRemoveAnswer = async (index: number) => {
+    const item = answerQueue[index]
     try {
       await fetch(`/api/answer/queue/${index}`, { method: 'DELETE' })
+      const typeLabel = item.type === 'single'
+        ? t('settings.singleChoice')
+        : item.type === 'multiple'
+          ? t('settings.multipleChoice')
+          : t('settings.shortAnswer')
+      const pageLabel = item.page
+        ? `${t('settings.pptPage')}: ${item.page}`
+        : ''
+      const detail = [pageLabel, typeLabel, `${t('settings.answer')}: ${item.answer}`].filter(Boolean).join(' | ')
+      addToast('success', `${t('settings.removedFromQueue')}: ${detail}`)
       await reloadAnswerQueue()
-    } catch { }
+    } catch {
+      addToast('error', t('settings.removeFromQueueFailed'))
+    }
   }
 
   const handleClearQueue = async () => {
     if (answerQueue.length === 0) return
     try {
       await fetch('/api/answer/queue', { method: 'DELETE' })
+      addToast('success', t('settings.queueCleared'))
       await reloadAnswerQueue()
-    } catch { }
+    } catch {
+      addToast('error', t('settings.clearQueueFailed'))
+    }
   }
 
   const handleEditAnswer = (index: number) => {

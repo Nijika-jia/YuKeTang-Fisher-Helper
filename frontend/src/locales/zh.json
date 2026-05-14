@@ -124,7 +124,14 @@
     "batchImportPlaceholder": "A\n5|B\nsingle|3|C\nmultiple|10|A,C\nshort||这是简答题答案",
     "import": "导入",
     "batchImportSuccess": "成功导入 {{count}} 条答案",
-    "batchImportFailed": "批量导入失败"
+    "batchImportFailed": "批量导入失败",
+    "removedFromQueue": "已从队列中删除",
+    "removeFromQueueFailed": "从队列中删除失败",
+    "queueCleared": "队列已清空",
+    "clearQueueFailed": "清空队列失败",
+    "queueEmptyFallbackAi": "答案队列为空，降级为AI答题",
+    "queueEmptyFallbackRandom": "答案队列为空且AI不可用，降级为随机答题",
+    "aiFallbackRandom": "AI答题失败，降级为随机答题"
   },
   "events": {
     "signin": "签到",
@@ -148,7 +155,10 @@
     "source_blank": "空答案",
     "source_queue": "答案队列",
     "answer": "答案",
-    "ai_failed": "AI答题失败，请手动作答！剩余5秒时，单选题和多选题将提交随机答案保底，简答题将提交空答案保底"
+    "ai_failed": "AI答题失败，请手动作答！剩余5秒时，单选题和多选题将提交随机答案保底，简答题将提交空答案保底",
+    "queue_empty_fallback_ai": "答案队列为空，降级为AI答题",
+    "queue_empty_fallback_random": "答案队列为空且AI不可用，降级为随机答题",
+    "ai_fallback_random": "AI答题失败，降级为随机答题"
   },
   "common": {
     "yes": "是",

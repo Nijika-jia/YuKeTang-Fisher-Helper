@@ -124,7 +124,14 @@
     "batchImportPlaceholder": "A\n5|B\nsingle|3|C\nmultiple|10|A,C\nshort||short answer text",
     "import": "Import",
     "batchImportSuccess": "Successfully imported {{count}} answer(s)",
-    "batchImportFailed": "Batch import failed"
+    "batchImportFailed": "Batch import failed",
+    "removedFromQueue": "Removed from queue",
+    "removeFromQueueFailed": "Failed to remove from queue",
+    "queueCleared": "Queue cleared",
+    "clearQueueFailed": "Failed to clear queue",
+    "queueEmptyFallbackAi": "Answer queue is empty, falling back to AI",
+    "queueEmptyFallbackRandom": "Answer queue is empty and AI unavailable, falling back to random",
+    "aiFallbackRandom": "AI answering failed, falling back to random"
   },
   "events": {
     "signin": "Sign-in",
@@ -148,7 +155,10 @@
     "source_blank": "blank",
     "source_queue": "queue",
     "answer": "answer(s)",
-    "ai_failed": "AI answering failed, please answer manually! In the last 5 seconds, random answers will be submitted for single-choice and multiple-choice questions as a fallback, and empty answers will be submitted for short-answer questions as a fallback"
+    "ai_failed": "AI answering failed, please answer manually! In the last 5 seconds, random answers will be submitted for single-choice and multiple-choice questions as a fallback, and empty answers will be submitted for short-answer questions as a fallback",
+    "queue_empty_fallback_ai": "Answer queue is empty, falling back to AI",
+    "queue_empty_fallback_random": "Answer queue is empty and AI unavailable, falling back to random",
+    "ai_fallback_random": "AI answering failed, falling back to random"
   },
   "common": {
     "yes": "Yes",

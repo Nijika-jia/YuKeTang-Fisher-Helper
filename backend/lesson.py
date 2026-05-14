@@ -332,8 +332,8 @@ class Lesson:
 
     def _answer_problem(self, problem: dict, problemid: Any, problemtype: int, mode: str, limit: int) -> None:
         start_time = time.time()
-        
-        # Check answer queue only when mode is "queue"
+
+        # Check answer queue when mode is "queue"
         if mode == "queue":
             queue_answer = self._check_answer_queue(problem)
             if queue_answer is not None:
@@ -342,6 +342,88 @@ class Lesson:
                     return
                 self._submit_answer(problemid, problemtype, queue_answer, "queue")
                 return
+
+            # Queue empty or no matching answer — fallback to AI
+            logger.info("Answer queue empty for problem %s, falling back to AI", problemid)
+            self.on_event("problem", {
+                "lesson": self.lessonname,
+                "lessonid": self.lessonid,
+                "problemid": problemid,
+                "problemtype": problemtype,
+                "status": "queue_empty_fallback_ai",
+            })
+
+            if self._get_ai_provider():
+                result_holder = [None]
+                ai_done = threading.Event()
+
+                def _call_ai():
+                    try:
+                        result_holder[0] = self._build_ai_answers(problem)
+                    except Exception:
+                        logger.exception("AI answering failed for problem %s", problemid)
+                    finally:
+                        ai_done.set()
+
+                threading.Thread(target=_call_ai, daemon=True).start()
+
+                delay = self._compute_delay(start_time, limit)
+                if not self.course_config.get("answer_last5s", False) and limit > 0:
+                    delay = min(delay, max(0, limit - self._FALLBACK_RESERVE))
+                remaining_delay = delay - (time.time() - start_time)
+                if remaining_delay > 0:
+                    ai_done.wait(timeout=remaining_delay)
+
+                if not self._running:
+                    return
+
+                if ai_done.is_set() and self._ai_result_acceptable(problemtype, result_holder[0]):
+                    self._submit_answer(problemid, problemtype, result_holder[0], "ai")
+                    return
+
+                if not ai_done.is_set():
+                    if limit > 0:
+                        time_left = limit - (time.time() - start_time)
+                        extra_wait = max(0, time_left - self._FALLBACK_RESERVE)
+                        if extra_wait > 0:
+                            ai_done.wait(timeout=extra_wait)
+                    else:
+                        ai_done.wait(timeout=self._AI_NO_DEADLINE_WAIT_SEC)
+
+                if not self._running:
+                    return
+
+                if self._ai_result_acceptable(problemtype, result_holder[0]):
+                    self._submit_answer(problemid, problemtype, result_holder[0], "ai")
+                    return
+
+                # AI also failed — fallback to random
+                logger.warning("AI also failed for problem %s in queue mode, falling back to random", problemid)
+                self.on_event("problem", {
+                    "lesson": self.lessonname,
+                    "lessonid": self.lessonid,
+                    "problemid": problemid,
+                    "problemtype": problemtype,
+                    "status": "ai_fallback_random",
+                })
+                fallback_answer, fallback_source = self._build_fallback_answer(problem, problemtype)
+                self._submit_answer(problemid, problemtype, fallback_answer, fallback_source)
+                return
+
+            # No AI provider — fallback to random directly
+            logger.info("No AI provider available for problem %s in queue mode, falling back to random", problemid)
+            self.on_event("problem", {
+                "lesson": self.lessonname,
+                "lessonid": self.lessonid,
+                "problemid": problemid,
+                "problemtype": problemtype,
+                "status": "queue_empty_fallback_random",
+            })
+            answers = self._build_random_answers(problem)
+            if not self._wait_for_delay(start_time, limit):
+                return
+            self._submit_answer(problemid, problemtype, answers, "random")
+            return
 
         if mode == "ai" and self._get_ai_provider():
             # Start AI call in background thread.

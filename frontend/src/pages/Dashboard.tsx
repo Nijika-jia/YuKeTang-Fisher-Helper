@@ -52,6 +52,15 @@ function formatEventLabel(event: ActivityEvent, t: (key: string) => string): str
       if (event.status === 'ai_failed') {
         return `${lesson}${problemTypeName}: ${t('events.ai_failed')}`
       }
+      if (event.status === 'queue_empty_fallback_ai') {
+        return `${lesson}${problemTypeName}: ${t('events.queue_empty_fallback_ai')}`
+      }
+      if (event.status === 'queue_empty_fallback_random') {
+        return `${lesson}${problemTypeName}: ${t('events.queue_empty_fallback_random')}`
+      }
+      if (event.status === 'ai_fallback_random') {
+        return `${lesson}${problemTypeName}: ${t('events.ai_fallback_random')}`
+      }
       const statusText = t(`events.${event.status || 'success'}`)
       const answerText = event.answers
         ? Array.isArray(event.answers)
@@ -93,6 +102,15 @@ function buildSpeechText(event: ActivityEvent, isChinese: boolean): string {
       if (event.status === 'ai_failed') {
         return isChinese ? `${lesson}AI答题失败，请手动作答` : `${lesson} AI failed, please answer manually`
       }
+      if (event.status === 'queue_empty_fallback_ai') {
+        return isChinese ? `${lesson}答案队列为空，降级为AI答题` : `${lesson} queue empty, falling back to AI`
+      }
+      if (event.status === 'queue_empty_fallback_random') {
+        return isChinese ? `${lesson}答案队列为空且AI不可用，降级为随机答题` : `${lesson} queue empty and AI unavailable, falling back to random`
+      }
+      if (event.status === 'ai_fallback_random') {
+        return isChinese ? `${lesson}AI答题失败，降级为随机答题` : `${lesson} AI failed, falling back to random`
+      }
       return isChinese ? `${lesson}已答题` : `${lesson} answered`
     case 'call':
       return isChinese ? '您被点名' : 'You were called on'
@@ -116,6 +134,8 @@ function eventBadgeClass(event: ActivityEvent): string {
     return event.status === 'error' ? 'badge badge-red' : 'badge badge-green'
   if (event.status === 'success') return 'badge badge-green'
   if (event.status === 'error' || event.status === 'ai_failed') return 'badge badge-red'
+  if (event.status === 'queue_empty_fallback_ai' || event.status === 'ai_fallback_random') return 'badge badge-yellow'
+  if (event.status === 'queue_empty_fallback_random') return 'badge badge-orange'
   return 'badge badge-blue'
 }
 
