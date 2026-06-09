@@ -1,74 +1,125 @@
+<div align="center">
+
 # Yuketang Helper Web
 
-- Based on [RainClassroomAssitant](https://github.com/TrickyDeath/RainClassroomAssitant) and [THU-Yuketang-Helper](https://github.com/zhangchi2004/THU-Yuketang-Helper)
+**Yuketang (Rain Classroom) Helper — Web Edition**
 
-## Language
-- [中文](README.md) | English
+[![GitHub Release](https://img.shields.io/github/v/release/Nijika-jia/YuKeTang-Fisher-Helper?style=flat-square&logo=github&label=Release)](https://github.com/Nijika-jia/YuKeTang-Fisher-Helper/releases)
+[![Python](https://img.shields.io/badge/Python-3.12-3776AB?style=flat-square&logo=python&logoColor=white)](https://www.python.org/)
+[![FastAPI](https://img.shields.io/badge/FastAPI-0.115+-009688?style=flat-square&logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/)
+[![React](https://img.shields.io/badge/React-18-61DAFB?style=flat-square&logo=react&logoColor=black)](https://react.dev/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.5-3178C6?style=flat-square&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
+[![Docker](https://img.shields.io/badge/Docker-Supported-2496ED?style=flat-square&logo=docker&logoColor=white)](https://www.docker.com/)
+[![License](https://img.shields.io/github/license/Nijika-jia/YuKeTang-Fisher-Helper?style=flat-square)](LICENSE)
+[![Platform](https://img.shields.io/badge/Platform-Windows%20%7C%20macOS%20%7C%20Linux-lightgrey?style=flat-square)](https://github.com/Nijika-jia/YuKeTang-Fisher-Helper/releases)
 
-## Features
+</div>
 
-- **Auto Sign-in** — Automatically checks in (simulates scanning the QR code via the app to enter the classroom)
-- **Auto Quiz Answering** — Handles single/multiple choice, voting, and short-answer questions with configurable strategies (random, blank, AI, or answer queue)
-- **Answer Queue** — Supports preset answers, prompts users to fill in corresponding answers by PPT page number, and automatically submits preset answers
-- **Auto Danmu** — Automatically sends a bullet chat when more than 3 identical messages appear within a short period (default threshold is adjustable)
-- **Auto Red Packet** — Automatically grabs red packets when received
-- **Roll Call Notifications** — Alerts you when roll call happens
-- **Voice Notifications** — Text-to-speech announcements for lesson events
-- **Per-Course Settings** — Fine-grained control over automation for each course
-- **Multi-Server Support** — Supports multiple Yuketang servers
-- **Bilingual UI** — English and Chinese interface
-- **Real-time Dashboard** — Live activity feed of all lesson events
+---
 
-## Quick Start
+> Based on [RainClassroomAssitant](https://github.com/TrickyDeath/RainClassroomAssitant) and [THU-Yuketang-Helper](https://github.com/zhangchi2004/THU-Yuketang-Helper)
 
-### Auto Initialization (Recommended)
-1. Download source code ZIP and extract, or use Git Clone
-```zsh
+[中文](README.md) | English
+
+##  Features
+
+| Feature | Description |
+|---------|-------------|
+| **Auto Sign-in** | Simulates app QR code scanning to automatically check in |
+| **Auto Quiz Answering** | Handles single/multiple choice, voting, and short-answer questions with configurable strategies (random / blank / AI / answer queue) |
+| **Answer Fallback Strategy** | Answer queue → AI → Random, three-level fallback to ensure no question is missed |
+| **Answer Queue** | Preset answers matched by PPT page number, with batch import and editing support |
+| **AI Answering** | Supports Google Gemini, OpenAI, ModelScope and more LLM providers |
+| **Auto Danmu** | Automatically sends bullet chat when 3+ identical messages appear (threshold adjustable) |
+| **Auto Red Packet** | Automatically grabs red packets when received |
+| **Roll Call Alert** | Sends notification when roll call is detected |
+| **Voice Notification** | Text-to-speech announcements for lesson events, with custom audio support |
+| **Per-Course Settings** | Fine-grained automation control for each course |
+| **Multi-Server Support** | Supports multiple Yuketang servers |
+| **Bilingual UI** | English and Chinese interface |
+| **Real-time Dashboard** | Live activity feed of all lesson events |
+
+##  Quick Start
+
+### Option 1: Auto Initialization (Recommended)
+
+```bash
 git clone https://github.com/Nijika-jia/YuKeTang-Fisher-Helper.git
+cd YuKeTang-Fisher-Helper
 ```
-2. Double-click to run in the project root directory:
-   init.bat
-3. After initialization is complete, double-click to run:
-   run.bat
-4. Open <http://localhost:8500> in your browser to use the app
 
-### Manual Initialization
-1. Download source code ZIP and extract, or use Git Clone
-```zsh
+1. Double-click `init.bat` and wait for initialization
+2. Double-click `run.bat`
+3. Open http://localhost:8500 in your browser
+
+### Option 2: Manual Initialization
+
+```bash
 git clone https://github.com/Nijika-jia/YuKeTang-Fisher-Helper.git
+cd YuKeTang-Fisher-Helper
+
+# Install frontend dependencies
+cd frontend && npm install && cd ..
+
+# Install backend dependencies
+cd backend && pip install -r requirements.txt && cd ..
+
+# Start
+python start.py
 ```
-2. Install [Python 3](https://www.python.org/) and [Node.js](https://nodejs.org/)
-3. Initialize frontend dependencies:
-   ```zsh
-   cd frontend
-   npm install
-   ```
-4. Initialize backend dependencies:
-   ```zsh
-   cd backend
-   pip install -r requirements.txt
-   ```
-5. Double-click to run in the project root directory:
-   run.bat
 
-6. Open <http://localhost:8500> in your browser to use the app
+Open http://localhost:8500 in your browser.
 
-## Run
+### Option 3: Docker
 
-- **Python**: Run `python start.py` in the project root directory, or double-click `run.bat`, then open <http://localhost:8500> in your browser
+```bash
+docker compose up -d
+```
 
-## Stop
+### Option 4: Download Executable
 
-- **Python**: Run `python stop.py` or close the terminal window
+Go to [Releases](https://github.com/Nijika-jia/YuKeTang-Fisher-Helper/releases) to download the executable for your platform.
 
-## Get AI API Key (Free)
+##  Tech Stack
 
-- **ModelScope**: Log in at [ModelScope](https://modelscope.cn/), **first bind your Alibaba Cloud account in [Account Settings](https://modelscope.cn/my/settings/account)**, then go to [Access Control](https://modelscope.cn/my/access/token) and click **Create Your Token**
+| Layer | Technology |
+|-------|------------|
+| **Frontend** | React 18 + TypeScript + Vite + react-i18next |
+| **Backend** | FastAPI + Uvicorn + WebSocket |
+| **AI** | Google Gemini / OpenAI / ModelScope |
+| **Deployment** | Docker + Docker Compose / PyInstaller |
 
-- **Google**: Log in at [Google AI Studio](https://aistudio.google.com/), go to the [Get API Key page](https://aistudio.google.com/api-keys), and click **Create API Key**
+##  Get AI API Key (Free)   
 
-## TODO
+| Provider | How to Get |
+|----------|------------|
+| **ModelScope** | Log in at [ModelScope](https://modelscope.cn/), bind your Alibaba Cloud account in [Account Settings](https://modelscope.cn/my/settings/account), then go to [Access Control](https://modelscope.cn/my/access/token) to create a token |
+| **Google** | Log in at [Google AI Studio](https://aistudio.google.com/), go to [Get API Key](https://aistudio.google.com/api-keys) and create a key |
 
-- [ ] Support multiple LLM APIs
-- [ ] Support Fill-in-the-blank answering
+##  Usage
+
+- **Start**: `python start.py` or double-click `run.bat`
+- **Stop**: `python stop.py` or close the terminal
+- **Access**: http://localhost:8500
+
+##  TODO
+
+- [ ] Support more LLM APIs
+- [ ] Support fill-in-the-blank answering
 - [ ] Auto preview
+
+##  Disclaimer
+
+This project is for educational purposes only. Users assume all risks. Please comply with applicable laws and school regulations. The author is not responsible for any consequences arising from the use of this project.
+
+##  License
+
+This project is licensed under the [MIT License](LICENSE).
+
+---
+
+<div align="center">
+
+**If this project helps you, please consider giving it a Star ⭐**
+
+</div>
