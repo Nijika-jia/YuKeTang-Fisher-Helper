@@ -18,28 +18,44 @@
 ---
 
 > 基于 [RainClassroomAssitant](https://github.com/TrickyDeath/RainClassroomAssitant) 和 [THU-Yuketang-Helper](https://github.com/zhangchi2004/THU-Yuketang-Helper)
+<div align="center">
+
+# Yuketang Helper Web
+
+**雨课堂助手 Web 版**
+
+[![GitHub Release](https://img.shields.io/github/v/release/Nijika-jia/YuKeTang-Fisher-Helper?style=flat-square&logo=github&label=Release)](https://github.com/Nijika-jia/YuKeTang-Fisher-Helper/releases)
+[![Python](https://img.shields.io/badge/Python-3.12-3776AB?style=flat-square&logo=python&logoColor=white)](https://www.python.org/)
+[![FastAPI](https://img.shields.io/badge/FastAPI-0.115+-009688?style=flat-square&logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/)
+[![React](https://img.shields.io/badge/React-18-61DAFB?style=flat-square&logo=react&logoColor=black)](https://react.dev/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.5-3178C6?style=flat-square&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
+[![Docker](https://img.shields.io/badge/Docker-Supported-2496ED?style=flat-square&logo=docker&logoColor=white)](https://www.docker.com/)
+[![License](https://img.shields.io/github/license/Nijika-jia/YuKeTang-Fisher-Helper?style=flat-square)](LICENSE)
+[![Platform](https://img.shields.io/badge/Platform-Windows%20%7C%20macOS%20%7C%20Linux-lightgrey?style=flat-square)](https://github.com/Nijika-jia/YuKeTang-Fisher-Helper/releases)
+
+</div>
+
+---
+
+> 基于 [RainClassroomAssitant](https://github.com/TrickyDeath/RainClassroomAssitant) 和 [THU-Yuketang-Helper](https://github.com/zhangchi2004/THU-Yuketang-Helper)
 
 中文 | [English](README_EN.md)
 
-##  功能特性
+## 功能
 
-| 功能 | 描述 |
-|------|------|
-| **自动签到** | 模拟 APP 扫码进入课堂，自动完成签到 |
-| **自动答题** | 支持单选、多选、投票和简答题，可配置答题策略（随机 / 空白 / AI / 答案队列） |
-| **答题降级策略** | 答案队列 → AI 答题 → 随机答题，三级降级确保不漏答 |
-| **答案队列** | 预设答案，按 PPT 页数匹配自动提交，支持批量导入与编辑 |
-| **AI 答题** | 支持 Google Gemini、OpenAI、ModelScope 等多种 LLM |
-| **自动弹幕** | 检测到 3 条以上相同弹幕时自动跟发（阈值可调） |
-| **自动抢红包** | 收到红包时自动抢 |
-| **点名提醒** | 点名时发送通知提醒 |
-| **语音通知** | 支持语音播报课程事件，支持自定义音频 |
-| **分课程设置** | 对每门课程进行精细化自动化控制 |
-| **多服务器支持** | 支持多个雨课堂服务器 |
-| **双语界面** | 支持中英文切换 |
-| **实时面板** | 实时展示所有课程事件动态 |
+- **自动签到** — 自动完成签到（模拟通过 APP 扫二维码进入课堂）
+- **自动答题** — 支持单选、多选、投票和简答题，可配置答题策略（随机、空白、AI 或答案队列）
+- **答案队列** — 支持预设答案，按PPT页数提示用户填写对应答案，自动提交预设答案(配合 [yuketang-helper-auto](https://github.com/ZaytsevZY/yuketang-helper-auto) 使用, 此项目可以看到后面未出现的PPT页, 为答案队列的答案填入提供支持)
+- **自动弹幕** — 当一段时间内出现超过 3 条相同弹幕时自动跟发（默认阈值可调）
+- **自动抢红包** — 收到红包时自动抢
+- **点名提醒** — 点名时发送通知提醒
+- **语音通知** — 支持语音播报课程事件,支持自定义语音通知音频
+- **分课程设置** — 对每门课程进行精细化的自动化控制
+- **多服务器支持** — 支持多个雨课堂服务器
+- **双语界面** — 支持中英文切换
+- **实时面板** — 实时展示所有课程事件动态
 
-##  快速开始
+## 快速开始
 
 ### 方式一：自动初始化（推荐）
 
