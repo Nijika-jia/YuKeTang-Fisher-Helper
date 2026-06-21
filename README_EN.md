@@ -4,14 +4,18 @@
 
 **Yuketang (Rain Classroom) Helper — Web Edition**
 
-[![GitHub Release](https://img.shields.io/github/v/release/Nijika-jia/YuKeTang-Fisher-Helper?style=flat-square&logo=github&label=Release)](https://github.com/Nijika-jia/YuKeTang-Fisher-Helper/releases)
-[![Python](https://img.shields.io/badge/Python-3.12-3776AB?style=flat-square&logo=python&logoColor=white)](https://www.python.org/)
-[![FastAPI](https://img.shields.io/badge/FastAPI-0.115+-009688?style=flat-square&logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/)
-[![React](https://img.shields.io/badge/React-18-61DAFB?style=flat-square&logo=react&logoColor=black)](https://react.dev/)
-[![TypeScript](https://img.shields.io/badge/TypeScript-5.5-3178C6?style=flat-square&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
-[![Docker](https://img.shields.io/badge/Docker-Supported-2496ED?style=flat-square&logo=docker&logoColor=white)](https://www.docker.com/)
-[![License](https://img.shields.io/github/license/Nijika-jia/YuKeTang-Fisher-Helper?style=flat-square)](LICENSE)
-[![Platform](https://img.shields.io/badge/Platform-Windows%20%7C%20macOS%20%7C%20Linux-lightgrey?style=flat-square)](https://github.com/Nijika-jia/YuKeTang-Fisher-Helper/releases)
+[![Release](https://img.shields.io/github/v/release/Nijika-jia/YuKeTang-Fisher-Helper?style=for-the-badge&logo=github&label=RELEASE)](https://github.com/Nijika-jia/YuKeTang-Fisher-Helper/releases)
+[![License](https://img.shields.io/github/license/Nijika-jia/YuKeTang-Fisher-Helper?style=for-the-badge)](LICENSE)
+
+[![Python](https://img.shields.io/badge/Python-3.12-3776AB?style=for-the-badge&logo=python&logoColor=white)](https://www.python.org/)
+[![FastAPI](https://img.shields.io/badge/FastAPI-0.115+-009688?style=for-the-badge&logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/)
+[![React](https://img.shields.io/badge/React-18-61DAFB?style=for-the-badge&logo=react&logoColor=black)](https://react.dev/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.5-3178C6?style=for-the-badge&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
+
+[![Docker](https://img.shields.io/badge/Docker-Supported-2496ED?style=for-the-badge&logo=docker&logoColor=white)](https://www.docker.com/)
+[![Platform](https://img.shields.io/badge/Platform-Win%20%7C%20macOS%20%7C%20Linux-lightgrey?style=for-the-badge)](https://github.com/Nijika-jia/YuKeTang-Fisher-Helper/releases)
+[![Bilingual](https://img.shields.io/badge/i18n-中%20%7C%20EN-blueviolet?style=for-the-badge)](#)
+[![PRs Welcome](https://img.shields.io/badge/PRs-Welcome-ff69b4?style=for-the-badge)](https://github.com/Nijika-jia/YuKeTang-Fisher-Helper/pulls)
 
 </div>
 
